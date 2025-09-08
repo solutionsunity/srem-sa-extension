@@ -8,11 +8,13 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Validate extension
         run: |
           cd extension
@@ -22,21 +24,21 @@ jobs:
             exit 1
           fi
           echo "✅ Extension manifest is valid"
-          
+
       - name: Get version from manifest
         id: version
         run: |
           VERSION=$(jq -r '.version' extension/manifest.json)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extension version: $VERSION"
-          
+
       - name: Package extension
         run: |
           cd extension
           zip -r ../srem-sa-extension-v${{ steps.version.outputs.version }}.zip . \
             -x "*.md" "*.git*" "*~" "*.swp" "*.log"
           echo "📦 Extension packaged successfully"
-          
+
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
@@ -45,17 +47,17 @@ jobs:
           name: "SREM Extension v${{ steps.version.outputs.version }}"
           body: |
             ## SREM.sa Real Estate Deeds Bridge v${{ steps.version.outputs.version }}
-            
+
             ### Installation
             1. Download the extension zip file below
             2. Extract the zip file
             3. Open Chrome → `chrome://extensions/`
             4. Enable "Developer mode"
             5. Click "Load unpacked" → Select the extracted folder
-            
+
             ### Changes
             See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
-            
+
             ---
             © 2025 Solutions Unity Co. - [solutionsunity.com](https://solutionsunity.com)
         env:
