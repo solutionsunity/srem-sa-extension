@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+  SREM.sa Real Estate Deeds Bridge - Popup Interface
+
+  Copyright (c) 2025 Solutions Unity Co.
+  Website: https://solutionsunity.com
+
+  Privacy-focused SREM deed data extraction with secure token management
+-->
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>SREM Bridge Extension</title>
+
+  <!-- Local reference to Bootstrap's RTL file -->
+  <link id="bootstrapLink" rel="stylesheet" href="css/bootstrap.rtl.min.css" />
+  <!-- Tajwal font CSS -->
+  <link rel="stylesheet" href="css/fonts.css" />
+
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: "Tajawal", sans-serif !important;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    .status-connected {
+      background-color: #28a745;
+      box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    }
+
+    .status-disconnected {
+      background-color: #dc3545;
+      box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
+    }
+
+    .status-checking {
+      background-color: #ffc107;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .logo {
+      max-height: 40px;
+      margin-bottom: 15px;
+    }
+
+    .btn-full-page {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .btn-full-page:hover {
+      background: linear-gradient(135deg, #0056b3, #004085);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .connection-info {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 15px 0;
+      border-right: 4px solid #007bff;
+    }
+
+    .connection-info.connected {
+      border-right-color: #28a745;
+      background: #d4edda;
+    }
+
+    .connection-info.disconnected {
+      border-right-color: #dc3545;
+      background: #f8d7da;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+  <!-- Header with logo and title -->
+  <div class="text-center mb-3">
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <img src="icons/icon-48.png" alt="SREM Logo" class="logo me-2"/>
+      <h4 class="mb-0 fw-bold">جسر صكوك</h4>
+    </div>
+    <small class="text-muted">SREM Bridge Extension</small>
+  </div>
+
+  <!-- Connection Status -->
+  <div class="connection-info" id="connectionInfo">
+    <div class="d-flex align-items-center mb-2">
+      <span class="status-indicator status-checking" id="statusIndicator"></span>
+      <strong id="statusText">جاري التحقق...</strong>
+    </div>
+    <small class="text-muted" id="statusMessage">التحقق من الاتصال بالبوصة العقارية</small>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="d-grid gap-2">
+    <a href="#" id="openFullPageBtn" class="btn btn-full-page text-center">
+      🔗 فتح الصفحة الكاملة
+    </a>
+
+    <button class="btn btn-outline-secondary btn-sm" id="refreshStatusBtn">
+      🔄 تحديث الحالة
+    </button>
+  </div>
+
+  <!-- Quick Info -->
+  <div class="mt-3">
+    <small class="text-muted">
+      <strong>للاستخدام:</strong><br>
+      1. سجل دخول إلى <a href="https://srem.moj.gov.sa" target="_blank">srem.moj.gov.sa</a><br>
+      2. افتح الصفحة الكاملة للاستعلام عن الصكوك
+    </small>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="mt-3 pt-2 border-top">
+    <small class="text-muted text-center d-block">
+      <strong>تنويه:</strong> هذا التطبيق ليس له علاقة رسمية بوزارة العدل أو البوصة العقارية
+    </small>
+  </div>
+
+  <!-- Copyright Footer -->
+  <div class="mt-2">
+    <small class="text-muted text-center d-block">
+      © 2025 <a href="https://solutionsunity.com" target="_blank" class="text-decoration-none">Solutions Unity Co.</a>
+    </small>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

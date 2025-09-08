@@ -1,0 +1,17 @@
+@font-face {
+  font-family: "Tajawal";
+  src: url("../fonts/Tajawal-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+
+@font-face {
+  font-family: "Tajawal";
+  src: url("../fonts/Tajawal-Bold.ttf") format("truetype");
+  font-weight: 500;
+  font-style: bold;
+}
+
+/* You can define more weights (200, 300, etc.) similarly. */

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SREM Bridge - Developer Example</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            background: #2d2d30;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #3e3e42;
+        }
+        h1 {
+            color: #4fc3f7;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #81c784;
+            border-bottom: 1px solid #3e3e42;
+            padding-bottom: 10px;
+        }
+        .code-block {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .comment {
+            color: #6a9955;
+        }
+        .string {
+            color: #ce9178;
+        }
+        .keyword {
+            color: #569cd6;
+        }
+        .function {
+            color: #dcdcaa;
+        }
+        .disclaimer {
+            background: #3c3c00;
+            border: 1px solid #666600;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 12px;
+            color: #ffff99;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .output {
+            background: #0f0f0f;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ SREM Bridge - Developer Example</h1>
+        
+        <div class="disclaimer">
+            <strong>Disclaimer:</strong> This application has no official relation to Ministry of Justice or SREM service.
+        </div>
+        
+        <h2>📋 Basic Integration</h2>
+        
+        <p>Minimal code to integrate SREM bridge into your application:</p>
+        
+        <div class="code-block">
+<span class="comment">// 1. Listen for extension responses</span>
+<span class="keyword">window</span>.<span class="function">addEventListener</span>(<span class="string">"message"</span>, (<span class="keyword">event</span>) => {
+    <span class="keyword">const</span> data = <span class="keyword">event</span>.data;
+    
+    <span class="keyword">if</span> (data.type === <span class="string">"SREM_EXTENSION_PONG"</span>) {
+        <span class="function">console</span>.<span class="function">log</span>(<span class="string">"Extension is available"</span>);
+    }
+    
+    <span class="keyword">if</span> (data.type === <span class="string">"SREM_AUTH_STATUS_RESPONSE"</span>) {
+        <span class="function">console</span>.<span class="function">log</span>(<span class="string">"Authenticated:"</span>, data.authenticated);
+    }
+    
+    <span class="keyword">if</span> (data.type === <span class="string">"SREM_BRIDGE_RESPONSE"</span>) {
+        <span class="function">console</span>.<span class="function">log</span>(<span class="string">"Search results:"</span>, data.results);
+    }
+});
+
+<span class="comment">// 2. Test extension availability</span>
+<span class="keyword">function</span> <span class="function">pingExtension</span>() {
+    <span class="keyword">window</span>.<span class="function">postMessage</span>({ type: <span class="string">"SREM_EXTENSION_PING"</span> }, <span class="string">"*"</span>);
+}
+
+<span class="comment">// 3. Check authentication status</span>
+<span class="keyword">function</span> <span class="function">checkAuth</span>() {
+    <span class="keyword">window</span>.<span class="function">postMessage</span>({
+        type: <span class="string">"SREM_AUTH_STATUS_REQUEST"</span>,
+        requestId: <span class="string">"auth_"</span> + <span class="keyword">Date</span>.<span class="function">now</span>()
+    }, <span class="string">"*"</span>);
+}
+
+<span class="comment">// 4. Search deeds by owner</span>
+<span class="keyword">function</span> <span class="function">searchByOwner</span>(deedNumbers, ownerIdType, ownerId) {
+    <span class="keyword">window</span>.<span class="function">postMessage</span>({
+        type: <span class="string">"SREM_BRIDGE_REQUEST"</span>,
+        requestId: <span class="string">"search_"</span> + <span class="keyword">Date</span>.<span class="function">now</span>(),
+        deedNumbers: deedNumbers,
+        searchMode: <span class="string">"owner"</span>,
+        ownerIdType: ownerIdType,
+        ownerId: ownerId
+    }, <span class="string">"*"</span>);
+}
+
+<span class="comment">// 5. Search deeds by date</span>
+<span class="keyword">function</span> <span class="function">searchByDate</span>(deedNumbers, year, month, day, isHijri = <span class="keyword">false</span>) {
+    <span class="keyword">window</span>.<span class="function">postMessage</span>({
+        type: <span class="string">"SREM_BRIDGE_REQUEST"</span>,
+        requestId: <span class="string">"search_"</span> + <span class="keyword">Date</span>.<span class="function">now</span>(),
+        deedNumbers: deedNumbers,
+        searchMode: <span class="string">"date"</span>,
+        deedDateYear: year,
+        deedDateMonth: month,
+        deedDateDay: day,
+        isHijriDate: isHijri
+    }, <span class="string">"*"</span>);
+}
+        </div>
+        
+        <h2>🧪 Live Test</h2>
+        
+        <button onclick="testPing()">Ping Extension</button>
+        <button onclick="testAuth()">Check Auth</button>
+        <button onclick="testOwnerSearch()">Test Owner Search</button>
+        <button onclick="testDateSearch()">Test Date Search</button>
+        <button onclick="clearOutput()">Clear Output</button>
+        
+        <div id="output" class="output">Ready for testing...
+</div>
+        
+        <h2>📚 API Reference</h2>
+        
+        <div class="code-block">
+<span class="comment">// Message Types (Send to Extension)</span>
+<span class="string">"SREM_EXTENSION_PING"</span>           <span class="comment">// Test extension availability</span>
+<span class="string">"SREM_AUTH_STATUS_REQUEST"</span>      <span class="comment">// Check authentication</span>
+<span class="string">"SREM_BRIDGE_REQUEST"</span>           <span class="comment">// Search deeds</span>
+
+<span class="comment">// Response Types (Receive from Extension)</span>
+<span class="string">"SREM_EXTENSION_PONG"</span>           <span class="comment">// Extension is available</span>
+<span class="string">"SREM_AUTH_STATUS_RESPONSE"</span>     <span class="comment">// Authentication status</span>
+<span class="string">"SREM_BRIDGE_RESPONSE"</span>          <span class="comment">// Search results</span>
+
+<span class="comment">// Owner ID Types</span>
+1 = National ID
+2 = Iqama
+5 = Commercial ID
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function testPing() {
+            log('Sending ping to extension...');
+            window.postMessage({ type: "SREM_EXTENSION_PING" }, "*");
+        }
+        
+        function testAuth() {
+            log('Checking authentication status...');
+            window.postMessage({
+                type: "SREM_AUTH_STATUS_REQUEST",
+                requestId: "test_auth_" + Date.now()
+            }, "*");
+        }
+        
+        function testOwnerSearch() {
+            log('Testing owner search...');
+            window.postMessage({
+                type: "SREM_BRIDGE_REQUEST",
+                requestId: "test_owner_" + Date.now(),
+                deedNumbers: "123456",
+                searchMode: "owner",
+                ownerIdType: 1,
+                ownerId: "1234567890"
+            }, "*");
+        }
+        
+        function testDateSearch() {
+            log('Testing date search...');
+            window.postMessage({
+                type: "SREM_BRIDGE_REQUEST",
+                requestId: "test_date_" + Date.now(),
+                deedNumbers: "123456",
+                searchMode: "date",
+                deedDateYear: 2024,
+                deedDateMonth: 1,
+                deedDateDay: 15,
+                isHijriDate: false
+            }, "*");
+        }
+        
+        function clearOutput() {
+            output.textContent = 'Output cleared.\n';
+        }
+        
+        // Listen for all responses
+        window.addEventListener("message", (event) => {
+            const data = event.data;
+            
+            switch (data.type) {
+                case "SREM_EXTENSION_PONG":
+                    log('✅ Extension responded: Available');
+                    break;
+                    
+                case "SREM_AUTH_STATUS_RESPONSE":
+                    log(`🔐 Auth status: ${data.authenticated ? 'Authenticated' : 'Not authenticated'}`);
+                    break;
+                    
+                case "SREM_BRIDGE_RESPONSE":
+                    if (data.success) {
+                        const successCount = data.results.filter(r => r.success).length;
+                        log(`✅ Search completed: ${successCount}/${data.results.length} deeds found`);
+                        log(`📄 Results: ${JSON.stringify(data.results, null, 2)}`);
+                    } else {
+                        log(`❌ Search failed: ${data.error}`);
+                    }
+                    break;
+                    
+                default:
+                    if (data.type && data.type.startsWith('SREM_')) {
+                        log(`📨 Unknown message: ${JSON.stringify(data, null, 2)}`);
+                    }
+            }
+        });
+        
+        log('Developer example loaded. Ready for testing.');
+    </script>
+</body>
+</html>

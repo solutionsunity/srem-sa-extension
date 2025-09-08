@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<!--
+  SREM.sa Real Estate Deeds Bridge - Full Page Interface
+
+  Copyright (c) 2025 Solutions Unity Co.
+  Website: https://solutionsunity.com
+
+  Privacy-focused SREM deed data extraction with secure token management
+-->
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>SREM Deeds Downloader</title>
+
+  <!-- Local reference to Bootstrap's RTL file -->
+  <link id="bootstrapLink" rel="stylesheet" href="css/bootstrap.rtl.min.css" />
+  <!-- Tajwal font CSS -->
+  <link rel="stylesheet" href="css/fonts.css" />
+
+  <style>
+    body {
+      font-family: "Tajawal", sans-serif !important;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .search-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+
+    .results-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 30px;
+      display: none;
+    }
+
+    .search-mode-tabs {
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 30px;
+    }
+
+    .search-mode-tab {
+      background: none;
+      border: none;
+      padding: 15px 25px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #6c757d;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .search-mode-tab.active {
+      color: #007bff;
+      border-bottom-color: #007bff;
+    }
+
+    .search-mode-tab:hover {
+      color: #007bff;
+    }
+
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 12px rgba(0, 123, 255, 0.2);
+      border-color: #007bff;
+    }
+
+    .btn-search {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      border: none;
+      padding: 12px 30px;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-search:hover {
+      background: linear-gradient(135deg, #0056b3, #004085);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    .status-connected {
+      background-color: #28a745;
+      box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    }
+
+    .status-disconnected {
+      background-color: #dc3545;
+      box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
+    }
+
+    .deed-result {
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .deed-result:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .deed-result.success {
+      border-left: 4px solid #28a745;
+    }
+
+    .deed-result.error {
+      border-left: 4px solid #dc3545;
+    }
+
+    .search-mode-content {
+      display: none;
+    }
+
+    .search-mode-content.active {
+      display: block;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .table-wrap {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Header -->
+    <div class="header-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <!-- Connection Status (Left) -->
+        <div class="d-flex align-items-center">
+          <span class="status-indicator status-disconnected" id="statusIndicator"></span>
+          <small class="text-muted ms-2" id="statusText">جاري التحقق...</small>
+        </div>
+
+        <!-- Title (Center) -->
+        <div class="text-center">
+          <h2 class="mb-0 fw-bold">الاستعلام عن الصكوك العقارية</h2>
+          <small class="text-muted">SREM Deeds Bridge</small>
+        </div>
+
+        <!-- Icon (Right) -->
+        <div class="text-end d-flex align-items-center">
+          <small class="text-success me-2" id="autoTokenStatus">
+            <span class="spinner-border spinner-border-sm me-1" role="status" style="display: none;" id="tokenSpinner"></span>
+            🤖
+          </small>
+          <img src="icons/icon-48.png" alt="SREM Logo" style="height: 32px; opacity: 0.8;"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Interface -->
+    <div class="search-card">
+      <h4 class="mb-4">البحث عن الصكوك</h4>
+
+      <!-- Shared Deed Numbers Input -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <label for="deedNumbers" class="form-label">أرقام الصكوك</label>
+          <textarea class="form-control" id="deedNumbers" rows="3" placeholder="أدخل رقم صك واحد أو عدة أرقام مفصولة بـ (مسافة أو , أو ; أو :)&#10;مثال:&#10;123456789&#10;987654321&#10;555666777"></textarea>
+          <div class="form-text">يمكن إدخال عدة أرقام في أسطر منفصلة أو مفصولة بـ (مسافة أو , أو ; أو :)</div>
+        </div>
+      </div>
+
+      <!-- Search Mode Tabs -->
+      <div class="search-mode-tabs">
+        <button class="search-mode-tab" data-mode="owner">البحث بمعلومات المالك</button>
+        <button class="search-mode-tab active" data-mode="date">البحث بتاريخ الصك</button>
+      </div>
+
+      <!-- Owner Search Mode -->
+      <div class="search-mode-content" id="ownerMode">
+        <div class="info-box">
+          <strong>البحث بمعلومات المالك:</strong> أدخل نوع الهوية ورقم الهوية للاستعلام عن الصكوك المدخلة أعلاه
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="ownerIdType" class="form-label">نوع الهوية</label>
+            <select class="form-select" id="ownerIdType">
+              <option value="1">هوية وطنية</option>
+              <option value="2">إقامة</option>
+              <option value="5">سجل تجاري</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="ownerId" class="form-label">رقم الهوية</label>
+            <input type="text" class="form-control" id="ownerId" placeholder="أدخل رقم الهوية">
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Search Mode -->
+      <div class="search-mode-content active" id="dateMode">
+        <div class="info-box">
+          <strong>البحث بتاريخ الصك:</strong> أدخل تاريخ إصدار الصكوك للاستعلام عن الصكوك المدخلة أعلاه
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="calendarType" class="form-label">نوع التقويم</label>
+            <select class="form-select" id="calendarType">
+              <option value="gregorian">ميلادي (Gregorian)</option>
+              <option value="hijri">هجري (Hijri)</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="deedDate" class="form-label">تاريخ الصك</label>
+            <input type="date" class="form-control" id="deedDate">
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <strong>ملاحظة:</strong> البحث بالتاريخ يستخدم التقويم الميلادي افتراضياً. يمكنك تغيير نوع التقويم حسب الحاجة.
+        </div>
+      </div>
+
+      <!-- Search Button - Outside tabs, always in same place -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <button class="btn btn-search btn-primary btn-lg w-100" id="searchBtn">
+            🔍 استعلام عن الصكوك
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-card" id="resultsCard">
+      <h4 class="mb-4">نتائج البحث</h4>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span id="resultsCount">0 نتيجة</span>
+        <button class="btn btn-success btn-sm" id="downloadAllBtn" disabled>
+          💾 تحميل الكل
+        </button>
+      </div>
+
+      <div id="resultsContainer">
+        <!-- Results will be populated here -->
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="text-center mt-4 mb-2">
+      <small class="text-muted">
+        <strong>تنويه:</strong> هذا التطبيق ليس له علاقة رسمية بوزارة العدل أو البورصة العقارية<br>
+        <strong>Disclaimer:</strong> This application has no official relation to Ministry of Justice or SREM service
+      </small>
+    </div>
+
+    <!-- Copyright Footer -->
+    <div class="text-center mb-3">
+      <small class="text-muted">
+        © 2025 <a href="https://solutionsunity.com" target="_blank" class="text-decoration-none">Solutions Unity Co.</a> -
+        SREM.sa Real Estate Deeds Bridge
+      </small>
+    </div>
+  </div>
+
+  <script src="fullpage.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+name: Validate Extension
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Validate manifest.json
+        run: |
+          cd extension
+          if ! jq empty manifest.json; then
+            echo "❌ Invalid manifest.json syntax"
+            exit 1
+          fi
+          echo "✅ manifest.json syntax is valid"
+          
+      - name: Check required fields
+        run: |
+          cd extension
+          REQUIRED_FIELDS=("name" "version" "manifest_version" "description")
+          
+          for field in "${REQUIRED_FIELDS[@]}"; do
+            if ! jq -e ".$field" manifest.json > /dev/null; then
+              echo "❌ Missing required field: $field"
+              exit 1
+            fi
+          done
+          echo "✅ All required manifest fields present"
+          
+      - name: Validate file structure
+        run: |
+          cd extension
+          REQUIRED_FILES=("manifest.json" "background.js" "popup.html" "popup.js")
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required files present"
+          
+      - name: Check JavaScript syntax
+        run: |
+          cd extension
+          for js_file in *.js; do
+            if [ -f "$js_file" ]; then
+              if ! node -c "$js_file"; then
+                echo "❌ JavaScript syntax error in: $js_file"
+                exit 1
+              fi
+            fi
+          done
+          echo "✅ JavaScript syntax is valid"
+          
+      - name: Validate HTML
+        run: |
+          cd extension
+          for html_file in *.html; do
+            if [ -f "$html_file" ]; then
+              # Basic HTML validation - check for basic structure
+              if ! grep -q "<!DOCTYPE html>" "$html_file"; then
+                echo "⚠️  Warning: $html_file missing DOCTYPE declaration"
+              fi
+              if ! grep -q "<html" "$html_file"; then
+                echo "❌ Invalid HTML structure in: $html_file"
+                exit 1
+              fi
+            fi
+          done
+          echo "✅ HTML structure is valid"
