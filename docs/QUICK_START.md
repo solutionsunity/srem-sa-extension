@@ -40,29 +40,73 @@
 
 ## 🌐 External App Integration
 
-### Basic Ping Test
+### Step 1: Check Extension Availability
 ```javascript
-// Check if extension is available
-window.postMessage({ type: "SREM_EXTENSION_PING" }, "*");
+// Public API - always works
+window.postMessage({ type: "SREM_EXTENSION_DISCOVERY" }, "*");
 
 window.addEventListener("message", (event) => {
-  if (event.data.type === "SREM_EXTENSION_PONG") {
-    console.log("Extension is ready!");
+  if (event.data.type === "SREM_EXTENSION_EXISTS") {
+    console.log("Extension found:", event.data.name, event.data.version);
   }
 });
 ```
 
-### Request Deed Data
+### Step 2: Request Domain Approval
 ```javascript
+// Public API - triggers approval popup
+window.postMessage({
+  type: "SREM_REQUEST_APPROVAL",
+  appName: "My CRM System",
+  reason: "Need access to deed data"
+}, "*");
+
+window.addEventListener("message", (event) => {
+  if (event.data.type === "SREM_APPROVAL_RESPONSE") {
+    if (event.data.approved) {
+      console.log("Approved! Access granted for 60 days");
+    } else {
+      console.log("Approval denied:", event.data.reason);
+    }
+  }
+});
+```
+
+### Step 3: Search Deeds (After Approval)
+```javascript
+// Protected API - requires approval
 window.postMessage({
   type: "SREM_BRIDGE_REQUEST",
-  requestId: "test_" + Date.now(),
+  requestId: "search_" + Date.now(),
   deedNumbers: "123456,789012",
   searchMode: "owner",
   ownerIdType: 1,
   ownerId: "1234567890"
 }, "*");
 ```
+
+### Using the Bridge Library (Recommended)
+```javascript
+// Include srem-bridge.js in your page
+const srem = new SremBridge('My App Name');
+
+// Complete workflow
+async function searchDeeds() {
+  if (await srem.isAvailable()) {
+    const approval = await srem.requestApproval('Need deed data');
+    if (approval.approved) {
+      const deeds = await srem.searchDeeds('123456', 'owner', 1, '1234567890');
+      console.log('Found deeds:', deeds);
+    }
+  }
+}
+```
+
+## 🔐 Security Notes
+
+- **Domain approval required** for protected APIs
+- **60-day approval expiry** - users must re-approve
+- First visit → approval popup, subsequent visits → seamless access
 
 ## 🔧 Troubleshooting
 

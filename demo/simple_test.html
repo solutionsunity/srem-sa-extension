@@ -72,18 +72,19 @@
 <body>
     <div class="container">
         <h1>🔧 SREM Extension - Simple Test</h1>
-        
+
         <div class="disclaimer">
             <strong>Disclaimer:</strong> This application has no official relation to Ministry of Justice or SREM service.
         </div>
-        
+
         <p>Quick test to verify the SREM extension is working properly.</p>
-        
-        <button onclick="testPing()">📡 Test Extension</button>
-        <button onclick="testAuth()">🔐 Test Authentication</button>
-        
+
+        <button onclick="testDiscovery()">🔍 Check Extension</button>
+        <button onclick="requestApproval()">🔐 Request Approval</button>
+        <button onclick="testAuth()">🔑 Test Authentication</button>
+
         <div id="result" style="display: none;"></div>
-        
+
         <div style="margin-top: 30px; font-size: 14px; color: #666;">
             <p><strong>Instructions:</strong></p>
             <ol style="text-align: left;">
@@ -96,49 +97,77 @@
 
     <script>
         const resultDiv = document.getElementById('result');
-        
+
         function showResult(message, type) {
             resultDiv.innerHTML = message;
             resultDiv.className = `result ${type}`;
             resultDiv.style.display = 'block';
         }
-        
-        function testPing() {
-            showResult('🔄 Testing extension...', 'info');
-            
-            window.postMessage({ type: "SREM_EXTENSION_PING" }, "*");
-            
+
+        function testDiscovery() {
+            showResult('🔄 Checking for extension...', 'info');
+
+            window.postMessage({ type: "SREM_EXTENSION_DISCOVERY" }, "*");
+
             setTimeout(() => {
-                if (resultDiv.textContent.includes('Testing')) {
-                    showResult('❌ Extension not responding. Please check if it\'s installed and enabled.', 'error');
+                if (resultDiv.textContent.includes('Checking')) {
+                    showResult('❌ Extension not found. Please check if it\'s installed and enabled.', 'error');
                 }
             }, 3000);
         }
-        
+
+        function requestApproval() {
+            showResult('🔄 Requesting domain approval...', 'info');
+
+            window.postMessage({
+                type: "SREM_REQUEST_APPROVAL",
+                appName: "SREM Simple Test",
+                reason: "Testing domain approval functionality"
+            }, "*");
+
+            setTimeout(() => {
+                if (resultDiv.textContent.includes('Requesting')) {
+                    showResult('❌ No approval response. Extension may not be available.', 'error');
+                }
+            }, 30000); // 30 second timeout for user decision
+        }
+
         function testAuth() {
             showResult('🔄 Checking authentication...', 'info');
-            
+
             window.postMessage({
                 type: "SREM_AUTH_STATUS_REQUEST",
                 requestId: 'test_' + Date.now()
             }, "*");
-            
+
             setTimeout(() => {
                 if (resultDiv.textContent.includes('Checking')) {
                     showResult('❌ No authentication response. Please login to SREM first.', 'error');
                 }
             }, 5000);
         }
-        
+
         // Listen for extension responses
         window.addEventListener("message", (event) => {
             const data = event.data;
-            
+
             switch (data.type) {
+                case "SREM_EXTENSION_EXISTS":
+                    showResult(`✅ Extension found: ${data.name} v${data.version}`, 'success');
+                    break;
+
+                case "SREM_APPROVAL_RESPONSE":
+                    if (data.approved) {
+                        showResult(`✅ Domain approved! Access granted for 60 days.`, 'success');
+                    } else {
+                        showResult(`❌ Domain approval denied: ${data.reason}`, 'error');
+                    }
+                    break;
+
                 case "SREM_EXTENSION_PONG":
                     showResult('✅ Extension is working correctly!', 'success');
                     break;
-                    
+
                 case "SREM_AUTH_STATUS_RESPONSE":
                     if (data.authenticated) {
                         showResult('✅ Successfully authenticated with SREM!', 'success');

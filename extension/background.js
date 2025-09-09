@@ -7,6 +7,145 @@
  * Privacy-focused SREM deed data extraction with secure token management
  */
 
+// Simple Domain Whitelist Manager
+class DomainWhitelist {
+  constructor() {
+    this.domains = new Map();
+    this.init();
+  }
+
+  async init() {
+    const { whitelist } = await chrome.storage.local.get(['whitelist']);
+    if (whitelist) {
+      this.domains = new Map(Object.entries(whitelist));
+      this.cleanup();
+    }
+  }
+
+  async isApproved(origin) {
+    const domain = this.domains.get(origin);
+    if (!domain) return false;
+
+    if (Date.now() > domain.expires) {
+      this.domains.delete(origin);
+      this.save();
+      return false;
+    }
+
+    domain.lastUsed = Date.now();
+    domain.uses++;
+    this.save();
+    return true;
+  }
+
+  async requestApproval(origin, appName = 'Unknown App', reason = 'Access SREM deed data') {
+    if (await this.isApproved(origin)) {
+      const domain = this.domains.get(origin);
+      return {
+        approved: true,
+        expiresAt: new Date(domain.expires).toISOString(),
+        reason: 'already_approved'
+      };
+    }
+
+    return new Promise((resolve) => {
+      const params = new URLSearchParams({
+        origin: origin,
+        appName: appName,
+        reason: reason
+      });
+
+      const approvalUrl = chrome.runtime.getURL(`approval.html?${params.toString()}`);
+
+      chrome.windows.create({
+        url: approvalUrl,
+        type: 'popup',
+        width: 430,
+        height: 370,
+        focused: true
+      }, (window) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error creating approval popup:', chrome.runtime.lastError);
+          resolve({
+            approved: false,
+            reason: 'popup_creation_failed'
+          });
+          return;
+        }
+
+        const listener = (message) => {
+          if (message.type === 'DOMAIN_APPROVAL' && message.origin === origin) {
+            chrome.runtime.onMessage.removeListener(listener);
+            if (message.approved) {
+              this.approve(origin, 60); // Fixed 60 days
+              const domain = this.domains.get(origin);
+              resolve({
+                approved: true,
+                expiresAt: new Date(domain.expires).toISOString(),
+                reason: 'user_approved'
+              });
+            } else {
+              resolve({
+                approved: false,
+                reason: 'user_denied'
+              });
+            }
+          }
+        };
+        chrome.runtime.onMessage.addListener(listener);
+      });
+    });
+  }
+
+  approve(origin, days = 60) {
+    this.domains.set(origin, {
+      approved: Date.now(),
+      expires: Date.now() + (days * 24 * 60 * 60 * 1000),
+      days,
+      uses: 0,
+      lastUsed: Date.now()
+    });
+    this.save();
+  }
+
+  remove(origin) {
+    this.domains.delete(origin);
+    this.save();
+  }
+
+  clear() {
+    this.domains.clear();
+    this.save();
+  }
+
+  list() {
+    this.cleanup();
+    return Array.from(this.domains.entries()).map(([origin, data]) => ({
+      origin,
+      ...data,
+      daysLeft: Math.ceil((data.expires - Date.now()) / (24 * 60 * 60 * 1000))
+    }));
+  }
+
+  cleanup() {
+    const now = Date.now();
+    for (const [origin, data] of this.domains) {
+      if (now > data.expires) {
+        this.domains.delete(origin);
+      }
+    }
+    this.save();
+  }
+
+  save() {
+    chrome.storage.local.set({
+      whitelist: Object.fromEntries(this.domains)
+    });
+  }
+}
+
+const whitelist = new DomainWhitelist();
+
 // OIDC token extraction function
 const getOIDCToken = () => {
   const oidcKey = 'oidc.user:https://sts-srem-sso.red.sa/:SREM.FrontEnd.Prod';
@@ -47,7 +186,7 @@ const getAuthStatus = async () => {
         };
       }
     } catch (error) {
-      console.log(`Tab ${tab.id} check failed:`, error.message);
+      // Tab check failed - continue to next tab
     }
   }
 
@@ -162,6 +301,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case "fetchDeeds":
       handleDeedRequest(message, sendResponse);
+      return true;
+    case "checkDomainApproval":
+      whitelist.requestApproval(message.origin).then(sendResponse);
+      return true;
+    case "requestDomainApproval":
+      whitelist.requestApproval(message.origin, message.appName, message.reason).then(sendResponse);
+      return true;
+    case "getDomainList":
+      sendResponse(whitelist.list());
+      return true;
+    case "removeDomain":
+      whitelist.remove(message.origin);
+      sendResponse({ success: true });
+      return true;
+    case "clearDomains":
+      whitelist.clear();
+      sendResponse({ success: true });
       return true;
   }
 });

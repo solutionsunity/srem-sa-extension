@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SREM Extension - Domain Approval</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background: white;
+      min-width: 380px;
+      min-height: 300px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .domain {
+      background: #e3f2fd;
+      padding: 8px;
+      border-radius: 6px;
+      margin: 8px 0;
+      font-family: monospace;
+      font-size: 13px;
+      word-break: break-all;
+      text-align: center;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 6px;
+      border-radius: 4px;
+      margin: 8px 0;
+      font-size: 12px;
+      text-align: center;
+    }
+    .expiry-note {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin: 8px 0;
+    }
+    .buttons {
+      margin-top: 15px;
+      text-align: center;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .approve {
+      background: #28a745;
+      color: white;
+    }
+    .approve:hover {
+      background: #218838;
+    }
+    .deny {
+      background: #dc3545;
+      color: white;
+    }
+    .deny:hover {
+      background: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    SREM Extension Access Request
+  </div>
+
+  <p style="text-align: center; margin: 8px 0; font-size: 14px;">
+    <strong id="appName">Unknown App</strong> is requesting access:
+  </p>
+
+  <div class="domain" id="domain"></div>
+
+  <div class="warning">
+    Only approve websites you trust with your deed data!
+  </div>
+
+  <div class="expiry-note">
+    Access will be approved for 60 days
+  </div>
+
+  <div class="buttons">
+    <button class="approve" id="approveBtn">
+      Approve & Remember
+    </button>
+    <button class="deny" id="denyBtn">
+      Deny Access
+    </button>
+  </div>
+
+  <script src="approval.js"></script>
+</body>
+</html>

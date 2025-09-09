@@ -94,6 +94,45 @@
       border-right-color: #dc3545;
       background: #f8d7da;
     }
+
+    .domain-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      margin: 3px 0;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .domain-name {
+      font-weight: bold;
+      color: #495057;
+      flex-grow: 1;
+      word-break: break-all;
+    }
+
+    .domain-expiry {
+      color: #6c757d;
+      font-size: 10px;
+      margin-left: 8px;
+    }
+
+    .remove-domain {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    .remove-domain:hover {
+      background: #c82333;
+    }
   </style>
 </head>
 
@@ -134,6 +173,25 @@
       1. سجل دخول إلى <a href="https://srem.moj.gov.sa" target="_blank">srem.moj.gov.sa</a><br>
       2. افتح الصفحة الكاملة للاستعلام عن الصكوك
     </small>
+  </div>
+
+  <!-- Domain Management -->
+  <div class="connection-info" style="margin-top: 15px;">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <strong style="font-size: 14px;">📋 Approved Domains</strong>
+      <small id="domainCount" class="text-muted">0</small>
+    </div>
+    <div id="domainsList" style="max-height: 100px; overflow-y: auto; margin-bottom: 10px;">
+      <small class="text-muted">Loading...</small>
+    </div>
+    <div class="d-flex gap-2">
+      <button id="refreshDomainsBtn" class="btn btn-outline-primary btn-sm flex-fill" style="font-size: 11px;">
+        🔄 Refresh
+      </button>
+      <button id="clearAllDomainsBtn" class="btn btn-outline-danger btn-sm flex-fill" style="font-size: 11px;">
+        🗑️ Clear All
+      </button>
+    </div>
   </div>
 
   <!-- Disclaimer -->

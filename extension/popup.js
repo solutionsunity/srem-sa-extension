@@ -41,9 +41,47 @@ const checkAuthStatus = () => {
   });
 };
 
+// Domain management functions
+const loadDomains = () => {
+  chrome.runtime.sendMessage({ type: 'getDomainList' }, (domains) => {
+    const domainsList = document.getElementById('domainsList');
+    const domainCount = document.getElementById('domainCount');
+
+    if (!domains || domains.length === 0) {
+      domainsList.innerHTML = '<small class="text-muted">No approved domains</small>';
+      domainCount.textContent = '0';
+      return;
+    }
+
+    domainCount.textContent = domains.length;
+    domainsList.innerHTML = domains.map(domain => `
+      <div class="domain-item">
+        <div class="domain-name">${domain.origin}</div>
+        <div class="domain-expiry">${domain.daysLeft}d left</div>
+        <button class="remove-domain" onclick="removeDomain('${domain.origin}')">×</button>
+      </div>
+    `).join('');
+  });
+};
+
+const removeDomain = (origin) => {
+  chrome.runtime.sendMessage({ type: 'removeDomain', origin }, () => {
+    loadDomains();
+  });
+};
+
+const clearAllDomains = () => {
+  if (confirm('Clear all approved domains?')) {
+    chrome.runtime.sendMessage({ type: 'clearDomains' }, () => {
+      loadDomains();
+    });
+  }
+};
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
   checkAuthStatus();
+  loadDomains();
 
   openFullPageBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -51,6 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   refreshStatusBtn.addEventListener('click', checkAuthStatus);
+
+  // Domain management handlers
+  document.getElementById('refreshDomainsBtn').addEventListener('click', loadDomains);
+  document.getElementById('clearAllDomainsBtn').addEventListener('click', clearAllDomains);
 });
 
 // Listen for status updates

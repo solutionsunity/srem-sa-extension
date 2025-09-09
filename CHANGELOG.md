@@ -2,6 +2,38 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
+## [1.1.0] - 2025-01-09
+
+### 🔐 Security & Privacy Enhancements
+- **NEW**: Domain approval system with 60-day expiry
+- **NEW**: Public API for extension discovery and approval requests
+- **NEW**: Minimalist approval popup (430x370px)
+- **IMPROVED**: Protected API requires domain approval
+- **IMPROVED**: Enhanced security with domain whitelisting
+
+### 🌐 API Changes
+- **NEW**: `SREM_EXTENSION_DISCOVERY` - Check if extension exists (Public)
+- **NEW**: `SREM_REQUEST_APPROVAL` - Request domain approval (Public)
+- **NEW**: `SREM_APPROVAL_RESPONSE` - Approval result response
+- **CHANGED**: `SREM_BRIDGE_REQUEST` now requires domain approval
+- **CHANGED**: `SREM_AUTH_STATUS_REQUEST` now requires domain approval
+
+### 🎨 User Interface
+- **NEW**: Clean approval popup with app name and reason display
+- **IMPROVED**: CSP-compliant popup (no inline event handlers)
+- **IMPROVED**: Responsive popup design without scrollbars
+
+### 📚 Documentation
+- **NEW**: `API_REFERENCE.md` - Complete API documentation
+- **UPDATED**: `README.md` - Simplified for quick start
+- **UPDATED**: Demo files with approval flow testing
+
+### 🔧 Technical Improvements
+- **IMPROVED**: Background script domain management
+- **IMPROVED**: Content script message handling
+- **REMOVED**: Debug console.log statements for production
+- **FIXED**: CSP violations in approval popup
+
 ## [1.0.0] - 2025-09-07
 
 ### Added

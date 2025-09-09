@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SREM Bridge - Public API Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .test-section { background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .status-section { background: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #2196f3; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .primary { background: #007bff; color: white; }
+        .success { background: #28a745; color: white; }
+        .danger { background: #dc3545; color: white; }
+        .warning { background: #ffc107; color: #212529; }
+        #log { background: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .log-entry { margin: 2px 0; }
+        .log-request { color: #007bff; }
+        .log-response { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .status-unknown { background: #6c757d; }
+        .status-available { background: #28a745; }
+        .status-approved { background: #17a2b8; }
+        .status-error { background: #dc3545; }
+    </style>
+    <script src="srem-bridge.js"></script>
+</head>
+<body>
+    <h1>🚀 SREM Bridge - Public API Demo</h1>
+
+    <div class="status-section">
+        <h3>🔍 Extension Status</h3>
+        <p><span class="status-indicator status-unknown" id="statusIndicator"></span>
+           Status: <strong id="extensionStatus">Checking...</strong></p>
+        <div id="extensionInfo" style="display: none;">
+            <small>
+                <strong>Extension:</strong> <span id="extName"></span><br>
+                <strong>Version:</strong> <span id="extVersion"></span><br>
+                <strong>ID:</strong> <span id="extId"></span>
+            </small>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 Public API Tests</h3>
+        <button class="primary" onclick="testDiscovery()">1. Test Extension Discovery</button>
+        <button class="warning" onclick="testApprovalRequest()">2. Request Approval</button>
+        <button class="success" onclick="testAuthStatus()">3. Check Auth Status</button>
+        <button class="danger" onclick="testBridgeRequest()">4. Search Deeds</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📚 Library Integration Test</h3>
+        <button class="success" onclick="testLibraryFlow()">Test Full Library Flow</button>
+        <p><small>This tests the complete SremBridge library workflow</small></p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Log</h3>
+        <button class="primary" onclick="clearLog()">Clear Log</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let srem = new SremBridge('SREM Demo App');
+        let extensionInfo = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(status, indicator = 'unknown') {
+            document.getElementById('extensionStatus').textContent = status;
+            const statusEl = document.getElementById('statusIndicator');
+            statusEl.className = `status-indicator status-${indicator}`;
+        }
+
+        function showExtensionInfo(info) {
+            document.getElementById('extName').textContent = info.name;
+            document.getElementById('extVersion').textContent = info.version;
+            document.getElementById('extId').textContent = info.id;
+            document.getElementById('extensionInfo').style.display = 'block';
+        }
+
+        async function testDiscovery() {
+            log('Testing extension discovery...', 'request');
+            updateStatus('Checking...', 'unknown');
+
+            const available = await srem.isAvailable();
+            if (available) {
+                extensionInfo = srem.getExtensionInfo();
+                updateStatus('Extension Found', 'available');
+                showExtensionInfo(extensionInfo);
+                log(`Extension discovered: ${extensionInfo.name} v${extensionInfo.version}`, 'response');
+            } else {
+                updateStatus('Not Found', 'error');
+                log('Extension not found or not responding', 'error');
+            }
+        }
+
+        async function testApprovalRequest() {
+            if (!extensionInfo) {
+                log('Please test discovery first', 'error');
+                return;
+            }
+
+            log('Requesting domain approval...', 'request');
+            const result = await srem.requestApproval('Demo app needs access to test SREM integration');
+
+            if (result.approved) {
+                updateStatus('Approved', 'approved');
+                log(`Approval granted! Expires: ${result.expiresAt}`, 'response');
+            } else {
+                updateStatus('Denied', 'error');
+                log(`Approval denied: ${result.reason}`, 'error');
+            }
+        }
+
+        async function testAuthStatus() {
+            log('Checking authentication status...', 'request');
+            const auth = await srem.getAuthStatus();
+
+            if (auth.authenticated) {
+                log(`Authenticated: ${auth.message}`, 'response');
+            } else {
+                log(`Not authenticated: ${auth.message}`, 'error');
+            }
+        }
+
+        async function testBridgeRequest() {
+            log('Testing deed search...', 'request');
+            const result = await srem.searchDeeds('123456789', 'owner', 1, '1234567890');
+
+            if (result.success) {
+                log(`Search successful: ${result.results.length} results`, 'response');
+            } else {
+                log(`Search failed: ${result.error}`, 'error');
+            }
+        }
+
+        async function testLibraryFlow() {
+            log('Testing complete library workflow...', 'request');
+
+            const result = await srem.initialize('Complete demo test of SREM integration');
+
+            if (result.ready) {
+                log('Library initialized successfully! Ready to use SREM features.', 'response');
+                updateStatus('Ready', 'approved');
+            } else {
+                log(`Library initialization failed: ${result.error}`, 'error');
+                updateStatus('Failed', 'error');
+            }
+        }
+
+        // Auto-discover extension on load
+        window.addEventListener('load', () => {
+            setTimeout(testDiscovery, 1000);
+        });
+    </script>
+</body>
+</html>

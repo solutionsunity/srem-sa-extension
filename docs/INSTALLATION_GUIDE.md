@@ -12,16 +12,16 @@ This guide will walk you through installing and setting up the SREM Bridge Exten
 
 ### Step 1: Download the Extension
 
-1. Download or clone the `srem-sa-extension` folder to your computer
-2. Ensure all files are present in the directory:
+1. Download or clone the `srem-sa-extension` repository to your computer
+2. Navigate to the `extension/` folder
+3. Ensure all files are present in the extension directory:
    - `manifest.json`
    - `background.js`
    - `content.js`
    - `popup.html` and `popup.js`
    - `fullpage.html` and `fullpage.js`
-   - `inject.js`
    - `bridge_content.js`
-   - `bridge_demo.html`
+   - `approval.html` and `approval.js`
    - `css/`, `fonts/`, `icons/` folders
 
 ### Step 2: Enable Developer Mode in Chrome
@@ -34,7 +34,7 @@ This guide will walk you through installing and setting up the SREM Bridge Exten
 ### Step 3: Load the Extension
 
 1. Click the **"Load unpacked"** button
-2. Navigate to and select the `srem-sa-extension` folder
+2. Navigate to and select the `extension/` folder (inside srem-sa-extension)
 3. Click **"Select Folder"** (or "Open" on some systems)
 4. The extension should now appear in your extensions list
 
