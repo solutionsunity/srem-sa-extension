@@ -58,9 +58,17 @@ const loadDomains = () => {
       <div class="domain-item">
         <div class="domain-name">${domain.origin}</div>
         <div class="domain-expiry">${domain.daysLeft}d left</div>
-        <button class="remove-domain" onclick="removeDomain('${domain.origin}')">×</button>
+        <button class="remove-domain" data-origin="${domain.origin}">×</button>
       </div>
     `).join('');
+
+    // Add event listeners for remove buttons (CSP compliant)
+    domainsList.querySelectorAll('.remove-domain').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const origin = e.target.getAttribute('data-origin');
+        removeDomain(origin);
+      });
+    });
   });
 };
 

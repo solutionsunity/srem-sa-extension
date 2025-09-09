@@ -13,9 +13,10 @@ function approve() {
     origin: origin,
     approved: true,
     days: 60  // Fixed 60 days
+  }, () => {
+    // Only close window after message is sent
+    window.close();
   });
-
-  window.close();
 }
 
 function deny() {
@@ -23,9 +24,10 @@ function deny() {
     type: 'DOMAIN_APPROVAL',
     origin: origin,
     approved: false
+  }, () => {
+    // Only close window after message is sent
+    window.close();
   });
-
-  window.close();
 }
 
 // Setup event listeners when DOM is loaded

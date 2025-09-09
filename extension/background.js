@@ -73,9 +73,39 @@ class DomainWhitelist {
           return;
         }
 
+        const windowId = window.id;
+
+        // Set up timeout for approval (30 seconds)
+        const timeout = setTimeout(() => {
+          cleanup();
+          resolve({
+            approved: false,
+            reason: 'timeout'
+          });
+        }, 30000);
+
+        // Handle window close (user closes popup without decision)
+        const windowCloseListener = (windowId) => {
+          if (windowId === window.id) {
+            console.log('Approval popup closed without decision');
+            cleanup();
+            resolve({
+              approved: false,
+              reason: 'popup_closed'
+            });
+          }
+        };
+
+        const cleanup = () => {
+          clearTimeout(timeout);
+          chrome.runtime.onMessage.removeListener(listener);
+          chrome.windows.onRemoved.removeListener(windowCloseListener);
+        };
+
         const listener = (message) => {
           if (message.type === 'DOMAIN_APPROVAL' && message.origin === origin) {
-            chrome.runtime.onMessage.removeListener(listener);
+            console.log('Received DOMAIN_APPROVAL message:', message);
+            cleanup();
             if (message.approved) {
               this.approve(origin, 60); // Fixed 60 days
               const domain = this.domains.get(origin);
@@ -92,7 +122,9 @@ class DomainWhitelist {
             }
           }
         };
+
         chrome.runtime.onMessage.addListener(listener);
+        chrome.windows.onRemoved.addListener(windowCloseListener);
       });
     });
   }

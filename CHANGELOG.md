@@ -2,7 +2,44 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
-## [1.1.1] - 2025-01-09
+## [1.1.4] - 2025-09-09
+
+### 🔧 Fixed
+- **Domain Removal**: Fixed "×" button in popup not working to remove approved domains
+- **CSP Compliance**: Replaced inline onclick handlers with proper event listeners
+- **Popup Functionality**: Domain removal buttons now work correctly
+
+### 🐛 Bug Details
+- **Issue**: Remove domain buttons (×) were using inline onclick handlers
+- **Root Cause**: Content Security Policy blocked inline event handlers
+- **Solution**: Replaced with data attributes and addEventListener
+
+## [1.1.3] - 2025-09-09
+
+### 🔧 Fixed
+- **Race Condition**: Fixed approval popup always returning "popup_closed"
+- **Message Timing**: Use callback to ensure message is sent before closing window
+- **User Actions**: Approve/Deny buttons now work correctly
+
+### 🐛 Bug Details
+- **Issue**: Window close event fired before approval message was processed
+- **Root Cause**: `window.close()` called immediately after `sendMessage()`
+- **Solution**: Use sendMessage callback to delay window closure
+
+## [1.1.2] - 2025-09-09
+
+### 🔧 Fixed
+- **Approval Popup Timeout**: Added 30-second timeout for approval requests
+- **Window Close Handling**: Properly handle when user closes approval popup
+- **Missing Permission**: Added "windows" permission for popup creation
+- **Promise Resolution**: Fixed hanging approval requests
+
+### 🛠️ Improvements
+- **Better Error Handling**: More specific error reasons (timeout, popup_closed, etc.)
+- **Resource Cleanup**: Proper cleanup of event listeners and timeouts
+- **User Experience**: Approval requests now always resolve within 30 seconds
+
+## [1.1.1] - 2025-09-09
 
 ### 🔧 Fixed
 - **JSON Output Consistency**: Unified Bridge API to use `result` field (same as downloads)
@@ -18,7 +55,7 @@ All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 - **UPDATED**: API documentation with unified schema examples
 - **IMPROVED**: Developer examples showing consistent parsing logic
 
-## [1.1.0] - 2025-01-09
+## [1.1.0] - 2025-09-09
 
 ### 🔐 Security & Privacy Enhancements
 - **NEW**: Domain approval system with 60-day expiry
