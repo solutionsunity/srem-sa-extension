@@ -2,6 +2,22 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
+## [1.1.1] - 2025-01-09
+
+### 🔧 Fixed
+- **JSON Output Consistency**: Unified Bridge API to use `result` field (same as downloads)
+- **Icon Updates**: Generated fresh extension icons from v1.1 design
+- **Developer Experience**: Same parsing logic now works for downloads and API responses
+
+### 🌐 API Changes
+- **CHANGED**: `SREM_BRIDGE_RESPONSE` now uses `result` instead of `results`
+- **IMPROVED**: Consistent schema across all deed data outputs
+- **UPDATED**: JavaScript library and demo files to use unified field name
+
+### 📚 Documentation
+- **UPDATED**: API documentation with unified schema examples
+- **IMPROVED**: Developer examples showing consistent parsing logic
+
 ## [1.1.0] - 2025-01-09
 
 ### 🔐 Security & Privacy Enhancements

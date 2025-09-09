@@ -122,17 +122,17 @@ window.postMessage({
   requestId: "search_" + Date.now(),
   deedNumbers: "123456,789012",      // Comma-separated deed numbers
   searchMode: "owner",               // "owner" or "date"
-  
+
   // For owner search:
   ownerIdType: 1,                    // 1=National ID, 2=Iqama, 5=Commercial
   ownerId: "1234567890",             // Owner ID number
-  
+
   // For date search:
   deedDateYear: 2024,                // Year
   deedDateMonth: 1,                  // Month (1-12)
   deedDateDay: 15,                   // Day (1-31)
   isHijriDate: false,                // true for Hijri, false for Gregorian
-  
+
   timestamp: Date.now()
 }, "*");
 ```
@@ -143,7 +143,7 @@ window.postMessage({
   type: "SREM_BRIDGE_RESPONSE",
   requestId: "search_1757416000000",
   success: true,                     // Overall success
-  results: [                         // Array of deed results
+  result: [                          // Array of deed results (same as downloads)
     {
       deedNumber: "123456",
       success: true,
@@ -169,6 +169,63 @@ window.postMessage({
 }
 ```
 
+## 📊 Data Format Consistency
+
+Both extension downloads and Bridge API use consistent deed data formatting:
+
+### Extension Downloads
+**Single deed download:**
+```json
+{
+  "result": [
+    {
+      "IsSuccess": true,
+      "Data": {
+        "DeedNo": 123456,
+        "DeedDate": "26/8/1443",
+        // ... other deed fields
+      }
+    }
+  ]
+}
+```
+
+**Multiple deed download:**
+```json
+{
+  "result": [
+    {
+      "IsSuccess": true,
+      "Data": { "DeedNo": 123456, /* ... */ }
+    },
+    {
+      "IsSuccess": true,
+      "Data": { "DeedNo": 789012, /* ... */ }
+    }
+  ]
+}
+```
+
+### Bridge API Response
+The Bridge API wraps deed data in response metadata but uses the same `result` field:
+```json
+{
+  "type": "SREM_BRIDGE_RESPONSE",
+  "success": true,
+  "result": [
+    {
+      "deedNumber": "123456",
+      "success": true,
+      "data": {
+        "IsSuccess": true,
+        "Data": { "DeedNo": 123456, /* ... */ }
+      },
+      "error": null
+    }
+  ]
+}
+```
+
 ## 📚 JavaScript Library
 
 For easier integration, use the provided `SremBridge` library:
@@ -186,11 +243,11 @@ async function initSrem() {
   if (await srem.isAvailable()) {
     // Request approval
     const approval = await srem.requestApproval('Need deed data');
-    
+
     if (approval.approved) {
       // Check authentication
       const auth = await srem.getAuthStatus();
-      
+
       if (auth.authenticated) {
         // Search deeds
         const results = await srem.searchDeeds('123456', 'owner', 1, '1234567890');
@@ -276,7 +333,7 @@ if (!auth.authenticated) {
 ```javascript
 const results = await srem.searchDeeds('123456');
 if (results.success) {
-  results.results.forEach(deed => {
+  results.result.forEach(deed => {
     if (deed.success) {
       processDeedData(deed.data);
     } else {

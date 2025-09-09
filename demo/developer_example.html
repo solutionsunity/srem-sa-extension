@@ -109,7 +109,7 @@
     }
 
     <span class="keyword">if</span> (data.type === <span class="string">"SREM_BRIDGE_RESPONSE"</span>) {
-        <span class="function">console</span>.<span class="function">log</span>(<span class="string">"Search results:"</span>, data.results);
+        <span class="function">console</span>.<span class="function">log</span>(<span class="string">"Search results:"</span>, data.result);
     }
 });
 
@@ -288,9 +288,9 @@
 
                 case "SREM_BRIDGE_RESPONSE":
                     if (data.success) {
-                        const successCount = data.results.filter(r => r.success).length;
-                        log(`✅ Search completed: ${successCount}/${data.results.length} deeds found`);
-                        log(`📄 Results: ${JSON.stringify(data.results, null, 2)}`);
+                        const successCount = data.result.filter(r => r.success).length;
+                        log(`✅ Search completed: ${successCount}/${data.result.length} deeds found`);
+                        log(`📄 Results: ${JSON.stringify(data.result, null, 2)}`);
                     } else {
                         log(`❌ Search failed: ${data.error}`);
                     }

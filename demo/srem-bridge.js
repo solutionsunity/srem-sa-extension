@@ -1,7 +1,7 @@
 /**
  * SREM Bridge JavaScript Library
  * Easy integration with SREM Extension
- * 
+ *
  * Usage:
  * const srem = new SremBridge('My App Name');
  * if (await srem.isAvailable()) {
@@ -34,19 +34,19 @@ class SremBridge {
         if (event.data.type === 'SREM_EXTENSION_EXISTS') {
           clearTimeout(timeout);
           window.removeEventListener('message', listener);
-          
+
           this.extensionInfo = {
             id: event.data.extensionId,
             version: event.data.version,
             name: event.data.name
           };
-          
+
           resolve(true);
         }
       };
 
       window.addEventListener('message', listener);
-      
+
       window.postMessage({
         type: 'SREM_EXTENSION_DISCOVERY',
         timestamp: Date.now()
@@ -69,7 +69,7 @@ class SremBridge {
         if (event.data.type === 'SREM_APPROVAL_RESPONSE') {
           clearTimeout(timeout);
           window.removeEventListener('message', listener);
-          
+
           this.isApproved = event.data.approved;
           resolve({
             approved: event.data.approved,
@@ -80,7 +80,7 @@ class SremBridge {
       };
 
       window.addEventListener('message', listener);
-      
+
       window.postMessage({
         type: 'SREM_REQUEST_APPROVAL',
         appName: this.appName,
@@ -105,7 +105,7 @@ class SremBridge {
         if (event.data.type === 'SREM_AUTH_STATUS_RESPONSE' && event.data.requestId === requestId) {
           clearTimeout(timeout);
           window.removeEventListener('message', listener);
-          
+
           resolve({
             authenticated: event.data.authenticated,
             status: event.data.status,
@@ -115,7 +115,7 @@ class SremBridge {
       };
 
       window.addEventListener('message', listener);
-      
+
       window.postMessage({
         type: 'SREM_AUTH_STATUS_REQUEST',
         requestId: requestId,
@@ -130,23 +130,23 @@ class SremBridge {
    * @param {string} searchMode - 'owner' or 'date'
    * @param {number} ownerIdType - 1 for Saudi ID, 2 for Iqama
    * @param {string} ownerId - Owner ID number
-   * @returns {Promise<{success: boolean, results: Array, error?: string}>}
+   * @returns {Promise<{success: boolean, result: Array, error?: string}>}
    */
   async searchDeeds(deedNumbers, searchMode = 'owner', ownerIdType = 1, ownerId = '') {
     return new Promise((resolve) => {
       const requestId = 'search_' + Date.now();
       const timeout = setTimeout(() => {
-        resolve({ success: false, results: [], error: 'Request timeout' });
+        resolve({ success: false, result: [], error: 'Request timeout' });
       }, 30000);
 
       const listener = (event) => {
         if (event.data.type === 'SREM_BRIDGE_RESPONSE' && event.data.requestId === requestId) {
           clearTimeout(timeout);
           window.removeEventListener('message', listener);
-          
+
           resolve({
             success: event.data.success,
-            results: event.data.results || [],
+            result: event.data.result || [],
             error: event.data.error,
             authStatus: event.data.authStatus
           });
@@ -154,7 +154,7 @@ class SremBridge {
       };
 
       window.addEventListener('message', listener);
-      
+
       window.postMessage({
         type: 'SREM_BRIDGE_REQUEST',
         requestId: requestId,

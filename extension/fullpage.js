@@ -149,7 +149,12 @@ const downloadResult = (index) => {
   const result = currentResults[index];
   if (!result.data) return;
 
-  const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+  // Use consistent schema: always wrap in { result: [...] }
+  const standardizedOutput = {
+    result: [result.data]
+  };
+
+  const blob = new Blob([JSON.stringify(standardizedOutput, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -163,13 +168,12 @@ const downloadAll = () => {
   const resultsWithData = currentResults.filter(r => r.data);
   if (resultsWithData.length === 0) return;
 
-  const allData = resultsWithData.map(r => ({
-    deedNumber: r.deedNumber,
-    success: r.success,
-    data: r.data,
-    error: r.error
-  }));
-  const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+  // Use consistent schema: always wrap in { result: [...] }
+  const standardizedOutput = {
+    result: resultsWithData.map(r => r.data)
+  };
+
+  const blob = new Blob([JSON.stringify(standardizedOutput, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

@@ -42,6 +42,9 @@ window.postMessage({
   ownerIdType: 1,
   ownerId: "1234567890"
 }, "*");
+
+// Response uses same schema as downloads
+// { type: "SREM_BRIDGE_RESPONSE", result: [...] }
 ```
 
 ## 🎯 Features

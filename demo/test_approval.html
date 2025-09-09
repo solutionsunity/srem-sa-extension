@@ -140,7 +140,7 @@
             const result = await srem.searchDeeds('123456789', 'owner', 1, '1234567890');
 
             if (result.success) {
-                log(`Search successful: ${result.results.length} results`, 'response');
+                log(`Search successful: ${result.result.length} results`, 'response');
             } else {
                 log(`Search failed: ${result.error}`, 'error');
             }

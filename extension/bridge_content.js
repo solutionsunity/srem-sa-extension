@@ -164,7 +164,7 @@
                             type: "SREM_BRIDGE_RESPONSE",
                             requestId: requestId,
                             success: false,
-                            results: [],
+                            result: [],
                             error: "Extension context invalidated. Please reload the page.",
                             authStatus: "error"
                         }, targetOrigin);
@@ -181,8 +181,7 @@
                             type: "SREM_BRIDGE_RESPONSE",
                             requestId: requestId,
                             success: response?.success || false,
-                            results: response?.results || [],
-                            data: response?.data || null,
+                            result: response?.results || [],
                             error: response?.error || null,
                             authStatus: response?.authStatus || "unknown"
                         }, targetOrigin);
