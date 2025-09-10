@@ -2,6 +2,18 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
+## [1.2.1] - 2025-09-10
+
+### 🐛 Bug Fixes
+- **Fixed**: Approval message port error when external apps are approved
+- **Resolved**: "The message port closed before a response was received" console error
+- **Enhanced**: Proper response handling in domain approval flow
+
+### 🔧 Technical Improvements
+- **Refactored**: Domain approval message handling with global tracking
+- **Added**: handleDomainApprovalResponse function with proper sendResponse()
+- **Improved**: Error handling in approval.js with better logging
+
 ## [1.2.0] - 2025-09-10
 
 ### 🏗️ Major Architecture Improvements - DRY Compliance

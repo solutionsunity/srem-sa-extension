@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SREM.sa Real Estate Deeds Bridge",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Privacy-focused SREM deed data extraction with secure token management",
   "author": "Solutions Unity Co.",
   "homepage_url": "https://solutionsunity.com",
