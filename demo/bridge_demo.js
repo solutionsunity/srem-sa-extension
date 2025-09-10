@@ -169,8 +169,8 @@ window.addEventListener("message", (event) => {
 
         case "SREM_BRIDGE_RESPONSE":
             if (data.success) {
-                const successCount = data.results.filter(r => r.success).length;
-                const totalCount = data.results.length;
+                const successCount = data.result.length; // Now using raw SREM data
+                const totalCount = data.metadata?.totalRequested || successCount;
 
                 if (successCount > 0) {
                     showSearchResult(`✅ Search completed! ${successCount}/${totalCount} deeds found.<br>
@@ -178,7 +178,7 @@ window.addEventListener("message", (event) => {
                     addLog(`Search successful: ${successCount}/${totalCount} deeds found`, 'SUCCESS');
                 } else {
                     // All deeds failed - show first error
-                    const firstError = data.results[0]?.error || 'No results found';
+                    const firstError = data.metadata?.failures?.[0]?.error || data.error || 'No results found';
                     showSearchResult(`❌ No deeds found: ${firstError}`, 'warning');
                     addLog(`Search completed but no deeds found: ${firstError}`, 'WARNING');
                 }

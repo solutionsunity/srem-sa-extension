@@ -7,6 +7,16 @@
  * Privacy-focused SREM deed data extraction with secure token management
  */
 
+// Centralized response formatter (inline for content script)
+const ResponseFormatter = {
+  formatDataResponse(sremResults) {
+    const successfulResults = sremResults.filter(r => r.success && r.data);
+    return {
+      result: successfulResults.map(r => r.data) // Raw SREM API response
+    };
+  }
+};
+
 // DOM elements
 const statusIndicator = document.getElementById('statusIndicator');
 const statusText = document.getElementById('statusText');
@@ -149,10 +159,8 @@ const downloadResult = (index) => {
   const result = currentResults[index];
   if (!result.data) return;
 
-  // Use consistent schema: always wrap in { result: [...] }
-  const standardizedOutput = {
-    result: [result.data]
-  };
+  // Use centralized response formatter for consistent output
+  const standardizedOutput = ResponseFormatter.formatDataResponse([result]);
 
   const blob = new Blob([JSON.stringify(standardizedOutput, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -168,10 +176,8 @@ const downloadAll = () => {
   const resultsWithData = currentResults.filter(r => r.data);
   if (resultsWithData.length === 0) return;
 
-  // Use consistent schema: always wrap in { result: [...] }
-  const standardizedOutput = {
-    result: resultsWithData.map(r => r.data)
-  };
+  // Use centralized response formatter for consistent output
+  const standardizedOutput = ResponseFormatter.formatDataResponse(resultsWithData);
 
   const blob = new Blob([JSON.stringify(standardizedOutput, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

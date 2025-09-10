@@ -207,22 +207,23 @@ Both extension downloads and Bridge API use consistent deed data formatting:
 ```
 
 ### Bridge API Response
-The Bridge API wraps deed data in response metadata but uses the same `result` field:
+The Bridge API uses the same `result` field as downloads with additional metadata:
 ```json
 {
   "type": "SREM_BRIDGE_RESPONSE",
   "success": true,
   "result": [
     {
-      "deedNumber": "123456",
-      "success": true,
-      "data": {
-        "IsSuccess": true,
-        "Data": { "DeedNo": 123456, /* ... */ }
-      },
-      "error": null
+      "IsSuccess": true,
+      "Data": { "DeedNo": 123456, /* ... */ }
     }
-  ]
+  ],
+  "metadata": {
+    "totalRequested": 1,
+    "totalSuccessful": 1,
+    "totalFailed": 0,
+    "failures": []
+  }
 }
 ```
 
@@ -334,10 +335,10 @@ if (!auth.authenticated) {
 const results = await srem.searchDeeds('123456');
 if (results.success) {
   results.result.forEach(deed => {
-    if (deed.success) {
-      processDeedData(deed.data);
+    if (deed.IsSuccess) {
+      processDeedData(deed.Data); // Direct access to SREM data
     } else {
-      console.warn(`Deed ${deed.deedNumber}: ${deed.error}`);
+      console.warn(`Deed failed: ${deed.ErrorList?.[0] || 'Unknown error'}`);
     }
   });
 } else {

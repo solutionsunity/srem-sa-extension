@@ -7,6 +7,9 @@
  * Privacy-focused SREM deed data extraction with secure token management
  */
 
+// Import centralized response formatter
+importScripts('response-formatter.js');
+
 // Simple Domain Whitelist Manager
 class DomainWhitelist {
   constructor() {
@@ -308,19 +311,12 @@ const handleDeedRequest = async (message, sendResponse) => {
       }
     }
 
-    sendResponse({
-      success: true,
-      results: results,
-      totalRequested: deedList.length,
-      totalSuccessful: results.filter(r => r.success).length
-    });
+    // Use centralized response formatter for internal communication
+    sendResponse(ResponseFormatter.formatInternalResponse(results));
 
   } catch (error) {
-    sendResponse({
-      success: false,
-      error: error.message,
-      results: []
-    });
+    // Use centralized response formatter for error responses
+    sendResponse(ResponseFormatter.formatInternalResponse([], "error"));
   }
 };
 

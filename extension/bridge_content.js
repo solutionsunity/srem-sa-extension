@@ -1,6 +1,56 @@
 // Bridge content script for external app integration
 // This script runs on localhost and other specified domains to enable communication
 
+// Centralized response formatter (inline for content script)
+const ResponseFormatter = {
+  formatBridgeResponse(requestId, sremResults, authStatus = "authenticated") {
+    const successfulResults = sremResults.filter(r => r.success && r.data);
+    const failedResults = sremResults.filter(r => !r.success);
+    const overallSuccess = successfulResults.length > 0;
+
+    return {
+      type: "SREM_BRIDGE_RESPONSE",
+      requestId: requestId,
+      success: overallSuccess,
+      result: successfulResults.map(r => r.data), // Raw SREM data - no wrapper
+      error: overallSuccess ? null : this._buildErrorMessage(failedResults),
+      authStatus: authStatus,
+      metadata: {
+        totalRequested: sremResults.length,
+        totalSuccessful: successfulResults.length,
+        totalFailed: failedResults.length,
+        failures: failedResults.map(r => ({
+          deedNumber: r.deedNumber,
+          error: r.error
+        }))
+      }
+    };
+  },
+
+  formatBridgeError(requestId, error, authStatus = "error") {
+    return {
+      type: "SREM_BRIDGE_RESPONSE",
+      requestId: requestId,
+      success: false,
+      result: [],
+      error: error,
+      authStatus: authStatus,
+      metadata: {
+        totalRequested: 0,
+        totalSuccessful: 0,
+        totalFailed: 0,
+        failures: []
+      }
+    };
+  },
+
+  _buildErrorMessage(failedResults) {
+    if (failedResults.length === 0) return null;
+    if (failedResults.length === 1) return failedResults[0].error;
+    return `${failedResults.length} deeds failed. First error: ${failedResults[0].error}`;
+  }
+};
+
 // Check if extension context is valid before proceeding
 (function () {
     try {
@@ -135,14 +185,13 @@
                     const requestInfo = pendingRequests.get(requestId);
                     const targetOrigin = requestInfo?.origin || "*";
 
-                    window.postMessage({
-                        type: "SREM_BRIDGE_RESPONSE",
-                        requestId: requestId,
-                        success: false,
-                        results: [],
-                        error: "Domain not approved. Please approve this domain to use SREM bridge.",
-                        authStatus: "domain_not_approved"
-                    }, targetOrigin);
+                    // Use centralized response formatter for error
+                    const errorResponse = ResponseFormatter.formatBridgeError(
+                        requestId,
+                        "Domain not approved. Please approve this domain to use SREM bridge.",
+                        "domain_not_approved"
+                    );
+                    window.postMessage(errorResponse, targetOrigin);
 
                     pendingRequests.delete(requestId);
                     return;
@@ -160,14 +209,13 @@
                         const requestInfo = pendingRequests.get(requestId);
                         const targetOrigin = requestInfo?.origin || "*";
 
-                        window.postMessage({
-                            type: "SREM_BRIDGE_RESPONSE",
-                            requestId: requestId,
-                            success: false,
-                            result: [],
-                            error: "Extension context invalidated. Please reload the page.",
-                            authStatus: "error"
-                        }, targetOrigin);
+                        // Use centralized response formatter for error
+                        const errorResponse = ResponseFormatter.formatBridgeError(
+                            requestId,
+                            "Extension context invalidated. Please reload the page.",
+                            "error"
+                        );
+                        window.postMessage(errorResponse, targetOrigin);
 
                         // Clean up stored request
                         pendingRequests.delete(requestId);
@@ -177,14 +225,13 @@
                         const requestInfo = pendingRequests.get(requestId);
                         const targetOrigin = requestInfo?.origin || "*";
 
-                        window.postMessage({
-                            type: "SREM_BRIDGE_RESPONSE",
-                            requestId: requestId,
-                            success: response?.success || false,
-                            result: response?.results || [],
-                            error: response?.error || null,
-                            authStatus: response?.authStatus || "unknown"
-                        }, targetOrigin);
+                        // Use centralized response formatter for success response
+                        const bridgeResponse = ResponseFormatter.formatBridgeResponse(
+                            requestId,
+                            response?.results || [],
+                            response?.authStatus || "unknown"
+                        );
+                        window.postMessage(bridgeResponse, targetOrigin);
 
                         // Clean up stored request
                         pendingRequests.delete(requestId);
@@ -196,14 +243,13 @@
             const requestInfo = pendingRequests.get(requestId);
             const targetOrigin = requestInfo?.origin || "*";
 
-            window.postMessage({
-                type: "SREM_BRIDGE_RESPONSE",
-                requestId: requestId,
-                success: false,
-                results: [],
-                error: "Extension context not available. Please reload the page.",
-                authStatus: "error"
-            }, targetOrigin);
+            // Use centralized response formatter for error
+            const errorResponse = ResponseFormatter.formatBridgeError(
+                requestId,
+                "Extension context not available. Please reload the page.",
+                "error"
+            );
+            window.postMessage(errorResponse, targetOrigin);
 
             // Clean up stored request
             pendingRequests.delete(requestId);
