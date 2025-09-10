@@ -13,8 +13,12 @@ function approve() {
     origin: origin,
     approved: true,
     days: 60  // Fixed 60 days
-  }, () => {
-    // Only close window after message is sent
+  }, (response) => {
+    // Response is now properly handled by background.js
+    if (chrome.runtime.lastError) {
+      console.error('Error sending approval message:', chrome.runtime.lastError);
+    }
+    // Close window after message is sent
     window.close();
   });
 }
@@ -24,8 +28,12 @@ function deny() {
     type: 'DOMAIN_APPROVAL',
     origin: origin,
     approved: false
-  }, () => {
-    // Only close window after message is sent
+  }, (response) => {
+    // Response is now properly handled by background.js
+    if (chrome.runtime.lastError) {
+      console.error('Error sending denial message:', chrome.runtime.lastError);
+    }
+    // Close window after message is sent
     window.close();
   });
 }

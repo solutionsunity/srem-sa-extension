@@ -10,6 +10,9 @@
 // Import centralized utilities (includes both RequestBuilder and ResponseFormatter)
 importScripts('shared-utils.js');
 
+// Global approval tracking
+const pendingApprovals = new Map();
+
 // Simple Domain Whitelist Manager
 class DomainWhitelist {
   constructor() {
@@ -80,7 +83,7 @@ class DomainWhitelist {
 
         // Set up timeout for approval (30 seconds)
         const timeout = setTimeout(() => {
-          cleanup();
+          pendingApprovals.delete(origin);
           resolve({
             approved: false,
             reason: 'timeout'
@@ -88,45 +91,29 @@ class DomainWhitelist {
         }, 30000);
 
         // Handle window close (user closes popup without decision)
-        const windowCloseListener = (windowId) => {
-          if (windowId === window.id) {
+        const windowCloseListener = (closedWindowId) => {
+          if (closedWindowId === windowId) {
             console.log('Approval popup closed without decision');
-            cleanup();
-            resolve({
-              approved: false,
-              reason: 'popup_closed'
-            });
-          }
-        };
-
-        const cleanup = () => {
-          clearTimeout(timeout);
-          chrome.runtime.onMessage.removeListener(listener);
-          chrome.windows.onRemoved.removeListener(windowCloseListener);
-        };
-
-        const listener = (message) => {
-          if (message.type === 'DOMAIN_APPROVAL' && message.origin === origin) {
-            console.log('Received DOMAIN_APPROVAL message:', message);
-            cleanup();
-            if (message.approved) {
-              this.approve(origin, 60); // Fixed 60 days
-              const domain = this.domains.get(origin);
-              resolve({
-                approved: true,
-                expiresAt: new Date(domain.expires).toISOString(),
-                reason: 'user_approved'
-              });
-            } else {
+            const pendingRequest = pendingApprovals.get(origin);
+            if (pendingRequest) {
+              clearTimeout(pendingRequest.timeout);
+              pendingApprovals.delete(origin);
               resolve({
                 approved: false,
-                reason: 'user_denied'
+                reason: 'popup_closed'
               });
             }
+            chrome.windows.onRemoved.removeListener(windowCloseListener);
           }
         };
 
-        chrome.runtime.onMessage.addListener(listener);
+        // Store the pending request globally
+        pendingApprovals.set(origin, {
+          resolve,
+          timeout,
+          windowId
+        });
+
         chrome.windows.onRemoved.addListener(windowCloseListener);
       });
     });
@@ -382,6 +369,40 @@ const handleDeedRequest = async (message, sendResponse) => {
   }
 };
 
+// Handle domain approval response from approval.html
+function handleDomainApprovalResponse(message) {
+  const { origin, approved } = message;
+  const pendingRequest = pendingApprovals.get(origin);
+
+  if (pendingRequest) {
+    console.log('Processing domain approval response:', { origin, approved });
+
+    // Clear the pending request
+    pendingApprovals.delete(origin);
+
+    // Clear any timeout
+    if (pendingRequest.timeout) {
+      clearTimeout(pendingRequest.timeout);
+    }
+
+    // Process the approval
+    if (approved) {
+      whitelist.approve(origin, 60); // Fixed 60 days
+      const domain = whitelist.domains.get(origin);
+      pendingRequest.resolve({
+        approved: true,
+        expiresAt: new Date(domain.expires).toISOString(),
+        reason: 'user_approved'
+      });
+    } else {
+      pendingRequest.resolve({
+        approved: false,
+        reason: 'user_denied'
+      });
+    }
+  }
+}
+
 // Message handlers
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -398,6 +419,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     case "requestDomainApproval":
       whitelist.requestApproval(message.origin, message.appName, message.reason).then(sendResponse);
+      return true;
+    case "DOMAIN_APPROVAL":
+      // Handle approval response from approval.html
+      handleDomainApprovalResponse(message);
+      sendResponse({ success: true });
       return true;
     case "getDomainList":
       sendResponse(whitelist.list());
