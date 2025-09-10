@@ -2,6 +2,23 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
+## [1.1.5] - 2025-09-10
+
+### 🔧 Fixed
+- **JSON Response Structure**: Fixed inconsistent response format between downloads and Bridge API
+- **Data Access Path**: Eliminated extra wrapper layer causing `data.Data` vs `Data` confusion
+- **Response Consistency**: All outputs now use same `result` field with raw SREM data
+
+### 🏗️ Architecture
+- **Centralized Formatter**: Added `response-formatter.js` utility for consistent JSON structure
+- **DRY Principle**: Single source of truth for all response formatting
+- **Updated Documentation**: API examples now reflect consistent format
+
+### 🐛 Bug Details
+- **Issue**: Bridge API wrapped SREM data in extra layer: `result[0].data.Data.DeedNo`
+- **Root Cause**: Multiple response formatting locations without coordination
+- **Solution**: Centralized response builder ensuring consistent `result[0].Data.DeedNo` access
+
 ## [1.1.4] - 2025-09-09
 
 ### 🔧 Fixed
