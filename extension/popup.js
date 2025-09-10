@@ -23,13 +23,15 @@ const updateStatus = (status, text, message) => {
   connectionInfo.className = `connection-info ${status}`;
 };
 
+// ChromeRuntimeHelper is pre-loaded via popup.html script tag
+
 // Check authentication status
 const checkAuthStatus = () => {
   updateStatus('checking', 'جاري التحقق...', 'التحقق من الاتصال بخدمة صكوك');
 
-  chrome.runtime.sendMessage({ type: "getAuthStatus" }, (response) => {
-    if (chrome.runtime.lastError) {
-      updateStatus('disconnected', 'خطأ', 'خطأ في التحقق من الاتصال');
+  window.ChromeRuntimeHelper.sendMessageSafely({ type: "getAuthStatus" }, (response, error) => {
+    if (error) {
+      updateStatus('disconnected', 'خطأ', `خطأ في التحقق من الاتصال: ${error.message}`);
       return;
     }
 

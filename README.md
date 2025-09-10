@@ -54,11 +54,14 @@ window.postMessage({
 - **📊 Dual Search Modes**: Search by owner ID or deed date
 - **💾 JSON Export**: Download individual or bulk deed data
 - **🌐 Public API**: External application integration with approval
+- **🏗️ DRY Architecture**: Centralized utilities for enhanced reliability and maintainability
+- **🛡️ Enhanced Error Handling**: Comprehensive error recovery with timeout and retry mechanisms
 
 ## 📚 Documentation
 
 - **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Detailed setup instructions
 - **[Quick Start Guide](docs/QUICK_START.md)** - Fast setup and usage
+- **[API Reference](docs/API_REFERENCE.md)** - Complete external API documentation
 - **[Demo Files](demo/)** - Example implementations and tests
 
 ## ⚠️ Disclaimer

@@ -32,7 +32,7 @@ window.postMessage({
 {
   type: "SREM_EXTENSION_EXISTS",
   extensionId: "abc123...",
-  version: "1.1.0",
+  version: "1.2.0",
   name: "SREM.sa Real Estate Deeds Bridge",
   timestamp: 1757416000000
 }

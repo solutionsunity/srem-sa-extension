@@ -7,8 +7,8 @@
  * Privacy-focused SREM deed data extraction with secure token management
  */
 
-// Import centralized response formatter
-importScripts('response-formatter.js');
+// Import centralized utilities (includes both RequestBuilder and ResponseFormatter)
+importScripts('shared-utils.js');
 
 // Simple Domain Whitelist Manager
 class DomainWhitelist {
@@ -201,6 +201,9 @@ const getOIDCToken = () => {
   }
 };
 
+// Cache for preventing duplicate broadcasts
+let lastAuthStatus = null;
+
 // Get authentication status
 const getAuthStatus = async () => {
   const tabs = await chrome.tabs.query({ url: "*://srem.moj.gov.sa/*" });
@@ -232,6 +235,49 @@ const getAuthStatus = async () => {
   };
 };
 
+// Check auth status and broadcast if changed
+const checkAndBroadcastAuthStatus = async (source = "unknown") => {
+  try {
+    const currentStatus = await getAuthStatus();
+
+    // Only broadcast if status actually changed
+    const statusChanged = !lastAuthStatus ||
+                         lastAuthStatus.authenticated !== currentStatus.authenticated ||
+                         lastAuthStatus.message !== currentStatus.message;
+
+    if (statusChanged) {
+      console.log(`Auth status changed (${source}):`, currentStatus);
+
+      // Update cache
+      lastAuthStatus = { ...currentStatus };
+
+      // Broadcast to all extension contexts
+      const broadcastMessage = {
+        type: "authStatusUpdate",
+        authenticated: currentStatus.authenticated,
+        status: currentStatus.status,
+        message: currentStatus.message,
+        timestamp: Date.now(),
+        source: source
+      };
+
+      // Send to all extension pages (popup, fullpage, etc.)
+      chrome.runtime.sendMessage(broadcastMessage).catch(() => {
+        // Ignore errors if no listeners (normal when popup/fullpage not open)
+      });
+
+      console.log(`Broadcasted auth status update from ${source}`);
+    }
+
+    return currentStatus;
+  } catch (error) {
+    console.error('Error checking auth status:', error);
+    return lastAuthStatus || { authenticated: false, status: "error", message: "Error checking status" };
+  }
+};
+
+// Utilities are now available as RequestBuilder and ResponseFormatter
+
 // Handle deed data requests
 const handleDeedRequest = async (message, sendResponse) => {
   try {
@@ -246,31 +292,24 @@ const handleDeedRequest = async (message, sendResponse) => {
       return;
     }
 
-    const { deedNumbers, ownerIdType, ownerId, searchMode, deedDateYear, deedDateMonth, deedDateDay, isHijriDate } = message;
-    const deedList = deedNumbers.split(/[,;\s:\n\r]+/).filter(Boolean);
+    // Extract and validate parameters using centralized RequestBuilder
+    const params = RequestBuilder.extractAllParameters(message);
+    const deedList = RequestBuilder.parseDeedNumbers(params.deedNumbers);
     const results = [];
+
+    if (deedList.length === 0) {
+      sendResponse({
+        success: false,
+        error: "No valid deed numbers provided",
+        results: []
+      });
+      return;
+    }
 
     for (const deedNumber of deedList) {
       try {
-        let apiUrl, payload;
-
-        if (searchMode === "date") {
-          apiUrl = "https://prod-inquiryservice-srem.moj.gov.sa/api/v1/DeedInquiry/GetDeedByDate";
-          payload = {
-            deedNumber: deedNumber.trim(),
-            deedDateYear: parseInt(deedDateYear),
-            deedDateMonth: parseInt(deedDateMonth),
-            deedDateDay: parseInt(deedDateDay),
-            isHijriDate: isHijriDate || false
-          };
-        } else {
-          apiUrl = "https://prod-inquiryservice-srem.moj.gov.sa/api/v1/DeedInquiry/GetDeedByOwner";
-          payload = {
-            deedNumber: deedNumber.trim(),
-            idType: parseInt(ownerIdType),
-            idNumber: ownerId.trim()
-          };
-        }
+        // Use centralized API payload building
+        const { apiUrl, payload } = RequestBuilder.buildApiPayload({ data: params }, deedNumber);
 
         const response = await fetch(apiUrl, {
           method: "POST",
@@ -281,11 +320,34 @@ const handleDeedRequest = async (message, sendResponse) => {
           body: JSON.stringify(payload)
         });
 
+        // Handle HTTP error status codes before attempting JSON parsing
         if (response.status === 401) {
           throw new Error("Authentication expired. Please login to SREM again.");
         }
 
-        const data = await response.json();
+        if (response.status === 503) {
+          throw new Error("SREM service is temporarily unavailable (503). Please try again later.");
+        }
+
+        if (response.status === 500) {
+          throw new Error("SREM internal server error (500). Please try again later.");
+        }
+
+        if (response.status === 404) {
+          throw new Error("SREM API endpoint not found (404). Please check your request.");
+        }
+
+        if (!response.ok) {
+          throw new Error(`SREM API error: HTTP ${response.status} ${response.statusText}`);
+        }
+
+        // Only attempt JSON parsing for successful HTTP responses
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          throw new Error(`SREM API returned invalid JSON response: ${jsonError.message}`);
+        }
 
         // Check both HTTP status and SREM API success
         const isHttpOk = response.ok;
@@ -324,7 +386,8 @@ const handleDeedRequest = async (message, sendResponse) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case "getAuthStatus":
-      getAuthStatus().then(sendResponse);
+      // Check and broadcast, then return current status
+      checkAndBroadcastAuthStatus("manual_check").then(sendResponse);
       return true;
 
     case "fetchDeeds":
@@ -358,7 +421,17 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return true;
 
     case "getAuthStatus":
-      getAuthStatus().then(sendResponse);
+      // Check and broadcast, then return current status
+      checkAndBroadcastAuthStatus("external_check").then(sendResponse);
       return true;
   }
 });
+
+// Periodic auth status monitoring
+// Check every 30 seconds for auth status changes
+setInterval(() => {
+  checkAndBroadcastAuthStatus("periodic_check");
+}, 30000);
+
+// Initial status check on extension startup
+checkAndBroadcastAuthStatus("startup");

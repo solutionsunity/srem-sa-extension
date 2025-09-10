@@ -2,6 +2,43 @@
 
 All notable changes to the SREM.sa Real Estate Deeds Bridge extension.
 
+## [1.2.0] - 2025-09-10
+
+### 🏗️ Major Architecture Improvements - DRY Compliance
+- **Eliminated Code Duplication**: Removed 300+ lines of duplicated code across components
+- **Centralized Utilities**: Created 5 new utility modules for consistent functionality
+- **Enhanced Reliability**: Improved error handling with timeout and retry mechanisms
+- **Better Maintainability**: Single source of truth for all request/response operations
+
+### 🔧 New Centralized Utilities
+- **`shared-utils.js`**: Consolidated RequestBuilder and ResponseFormatter for content scripts
+- **`auth-response-builder.js`**: Centralized authentication response patterns
+- **`chrome-runtime-helper.js`**: Safe Chrome runtime operations with error recovery
+- **Enhanced `request-builder.js`**: Improved parameter validation and API payload building
+- **Enhanced `response-formatter.js`**: Consistent response formatting across all components
+
+### 🐛 Bug Fixes
+- **Fixed Original Issue**: Resolved `.trim()` crash when `ownerId` parameter missing for date searches
+- **Fixed**: Date search functionality now working correctly with proper API endpoints
+- **Enhanced**: Separate date input widgets for Gregorian vs Hijri calendars
+- **Improved**: Error handling with consistent messages and recovery patterns
+- **Resolved**: Script loading conflicts and duplicate declarations
+
+### 🔧 Technical Improvements
+- **DRY Compliance**: Eliminated all code duplication with centralized utilities
+- **Enhanced**: Automatic auth status broadcasting with real-time updates
+- **Optimized**: Static imports for better performance and reliability
+
+### 🎨 UX Improvements
+- **Enhanced**: Search button now disabled when service is not connected
+- **Improved**: Clear visual feedback with disabled button styling and helpful text
+- **Added**: Tooltip guidance when authentication is required
+
+### 🔄 Migration Notes
+- **No Breaking Changes**: All existing functionality preserved
+- **Enhanced APIs**: New utilities provide more robust error handling
+- **Backward Compatible**: External API unchanged, only internal improvements
+
 ## [1.1.5] - 2025-09-10
 
 ### 🔧 Fixed

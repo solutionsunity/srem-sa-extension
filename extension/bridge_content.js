@@ -1,8 +1,11 @@
 // Bridge content script for external app integration
 // This script runs on localhost and other specified domains to enable communication
 
-// Centralized response formatter (inline for content script)
-const ResponseFormatter = {
+// Utilities are pre-loaded via manifest.json content_scripts
+// Available: window.RequestBuilder, window.ResponseFormatter, window.AuthResponseBuilder, window.ChromeRuntimeHelper
+
+// Fallback response formatter for immediate use
+const ResponseFormatterFallback = {
   formatBridgeResponse(requestId, sremResults, authStatus = "authenticated") {
     const successfulResults = sremResults.filter(r => r.success && r.data);
     const failedResults = sremResults.filter(r => !r.success);
@@ -165,7 +168,21 @@ const ResponseFormatter = {
 
     // Handle bridge requests from external applications
     function handleBridgeRequest(event) {
-        const { requestId, deedNumbers, ownerIdType, ownerId } = event.data;
+        // Extract and validate all parameters using centralized RequestBuilder
+        const validationResult = window.RequestBuilder.validateAndBuildRequest(event.data);
+
+        if (!validationResult.success) {
+            // Send validation error response
+            const errorResponse = window.ResponseFormatter.formatBridgeError(
+                event.data.requestId || 'unknown',
+                `Invalid request parameters: ${validationResult.errors.join(', ')}`,
+                "validation_error"
+            );
+            window.postMessage(errorResponse, event.origin);
+            return;
+        }
+
+        const requestId = validationResult.data.requestId;
 
         // Store the requesting origin for secure response targeting
         pendingRequests.set(requestId, {
@@ -173,137 +190,104 @@ const ResponseFormatter = {
             timestamp: Date.now()
         });
 
+        // Check domain approval first using ChromeRuntimeHelper
+        window.ChromeRuntimeHelper.sendMessageSafely({
+            type: "checkDomainApproval",
+            origin: event.origin
+        }, (approved, error) => {
+            if (error) {
+                const requestInfo = pendingRequests.get(requestId);
+                const targetOrigin = requestInfo?.origin || "*";
 
+                const errorResponse = window.ResponseFormatter.formatBridgeError(
+                    requestId,
+                    `Extension error: ${error.message}`,
+                    "extension_error"
+                );
+                window.postMessage(errorResponse, targetOrigin);
+                pendingRequests.delete(requestId);
+                return;
+            }
 
-        // Check domain approval first
-        if (chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage({
-                type: "checkDomainApproval",
-                origin: event.origin
-            }, (approved) => {
-                if (!approved) {
+            if (!approved) {
+                const requestInfo = pendingRequests.get(requestId);
+                const targetOrigin = requestInfo?.origin || "*";
+
+                const errorResponse = window.ResponseFormatter.formatBridgeError(
+                    requestId,
+                    "Domain not approved. Please approve this domain to use SREM bridge.",
+                    "domain_not_approved"
+                );
+                window.postMessage(errorResponse, targetOrigin);
+                pendingRequests.delete(requestId);
+                return;
+            }
+
+            // Domain approved, proceed with request using centralized message builder
+            const message = window.RequestBuilder.buildInternalMessage(validationResult);
+            window.ChromeRuntimeHelper.sendMessageSafely(message, (response, error) => {
+                if (error) {
+                    // Send error response back to the requesting origin only
                     const requestInfo = pendingRequests.get(requestId);
                     const targetOrigin = requestInfo?.origin || "*";
 
                     // Use centralized response formatter for error
-                    const errorResponse = ResponseFormatter.formatBridgeError(
+                    const errorResponse = window.ResponseFormatter.formatBridgeError(
                         requestId,
-                        "Domain not approved. Please approve this domain to use SREM bridge.",
-                        "domain_not_approved"
+                        `Extension error: ${error.message}`,
+                        "extension_error"
                     );
                     window.postMessage(errorResponse, targetOrigin);
 
+                    // Clean up stored request
                     pendingRequests.delete(requestId);
-                    return;
+                } else {
+                    // Send response back to the requesting origin only
+                    const requestInfo = pendingRequests.get(requestId);
+                    const targetOrigin = requestInfo?.origin || "*";
+
+                    // Use centralized response formatter for success response
+                    const bridgeResponse = window.ResponseFormatter.formatBridgeResponse(
+                        requestId,
+                        response?.results || [],
+                        response?.authStatus || "unknown"
+                    );
+                    window.postMessage(bridgeResponse, targetOrigin);
+
+                    // Clean up stored request
+                    pendingRequests.delete(requestId);
                 }
-
-                // Domain approved, proceed with request
-                chrome.runtime.sendMessage({
-                    type: "fetchDeeds",
-                    deedNumbers: deedNumbers,
-                    ownerIdType: ownerIdType,
-                    ownerId: ownerId
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        // Send error response back to the requesting origin only
-                        const requestInfo = pendingRequests.get(requestId);
-                        const targetOrigin = requestInfo?.origin || "*";
-
-                        // Use centralized response formatter for error
-                        const errorResponse = ResponseFormatter.formatBridgeError(
-                            requestId,
-                            "Extension context invalidated. Please reload the page.",
-                            "error"
-                        );
-                        window.postMessage(errorResponse, targetOrigin);
-
-                        // Clean up stored request
-                        pendingRequests.delete(requestId);
-                    } else {
-
-                        // Send response back to the requesting origin only
-                        const requestInfo = pendingRequests.get(requestId);
-                        const targetOrigin = requestInfo?.origin || "*";
-
-                        // Use centralized response formatter for success response
-                        const bridgeResponse = ResponseFormatter.formatBridgeResponse(
-                            requestId,
-                            response?.results || [],
-                            response?.authStatus || "unknown"
-                        );
-                        window.postMessage(bridgeResponse, targetOrigin);
-
-                        // Clean up stored request
-                        pendingRequests.delete(requestId);
-                    }
-                });
             });
-        } else {
-            // Extension context not available
-            const requestInfo = pendingRequests.get(requestId);
-            const targetOrigin = requestInfo?.origin || "*";
-
-            // Use centralized response formatter for error
-            const errorResponse = ResponseFormatter.formatBridgeError(
-                requestId,
-                "Extension context not available. Please reload the page.",
-                "error"
-            );
-            window.postMessage(errorResponse, targetOrigin);
-
-            // Clean up stored request
-            pendingRequests.delete(requestId);
-        }
+        });
     }
 
     // Handle authentication status requests
     function handleAuthStatusRequest(event) {
         const { requestId } = event.data;
 
+        // Use ChromeRuntimeHelper for safe message sending
+        window.ChromeRuntimeHelper.sendMessageSafely({
+            type: "getAuthStatus"
+        }, (response, error) => {
+            let authResponse;
 
-
-        try {
-            if (chrome.runtime && chrome.runtime.sendMessage) {
-                chrome.runtime.sendMessage({
-                    type: "getAuthStatus"
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        window.postMessage({
-                            type: "SREM_AUTH_STATUS_RESPONSE",
-                            requestId: requestId,
-                            authenticated: false,
-                            status: "error",
-                            message: "Extension context invalidated. Please reload the page."
-                        }, "*");
-                    } else {
-
-                        window.postMessage({
-                            type: "SREM_AUTH_STATUS_RESPONSE",
-                            requestId: requestId,
-                            authenticated: response?.authenticated || false,
-                            status: response?.status || "unknown",
-                            message: response?.message || "Unknown status"
-                        }, "*");
-                    }
-                });
+            if (error) {
+                // Use AuthResponseBuilder for consistent error responses
+                authResponse = window.AuthResponseBuilder.buildAuthError(
+                    requestId,
+                    `Extension error: ${error.message}`
+                );
             } else {
-                window.postMessage({
-                    type: "SREM_AUTH_STATUS_RESPONSE",
-                    requestId: requestId,
-                    authenticated: false,
-                    status: "error",
-                    message: "Extension context not available. Please reload the page."
-                }, "*");
+                // Use AuthResponseBuilder for consistent success responses
+                authResponse = window.AuthResponseBuilder.fromChromeResponse(
+                    requestId,
+                    response
+                );
             }
-        } catch (error) {
-            window.postMessage({
-                type: "SREM_AUTH_STATUS_RESPONSE",
-                requestId: requestId,
-                authenticated: false,
-                status: "error",
-                message: "Extension error. Please reload the page."
-            }, "*");
-        }
+
+            // Send the response
+            window.AuthResponseBuilder.sendAuthResponse(authResponse);
+        });
     }
 
     // Bridge ready notification removed - extension stays hidden until approved

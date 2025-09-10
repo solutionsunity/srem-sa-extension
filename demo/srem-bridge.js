@@ -91,12 +91,40 @@ class SremBridge {
   }
 
   /**
+   * Generate a unique request ID with context prefix
+   * @param {string} context - Context identifier (e.g., 'auth', 'search')
+   * @returns {string} Unique request ID
+   * @private
+   */
+  _generateRequestId(context = 'request') {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 11);
+    return `${context}_${timestamp}_${random}`;
+  }
+
+  /**
+   * Format date components as zero-padded strings
+   * @param {number|string} year - Year value
+   * @param {number|string} month - Month value (1-12)
+   * @param {number|string} day - Day value (1-31)
+   * @returns {Object} Zero-padded date components
+   * @private
+   */
+  _formatDateComponents(year, month, day) {
+    return {
+      deedDateYear: String(year).padStart(4, '0'),
+      deedDateMonth: String(month).padStart(2, '0'),
+      deedDateDay: String(day).padStart(2, '0')
+    };
+  }
+
+  /**
    * Check authentication status
    * @returns {Promise<{authenticated: boolean, status: string, message: string}>}
    */
   async getAuthStatus() {
     return new Promise((resolve) => {
-      const requestId = 'auth_' + Date.now();
+      const requestId = this._generateRequestId('auth');
       const timeout = setTimeout(() => {
         resolve({ authenticated: false, status: 'timeout', message: 'Request timeout' });
       }, 10000);
@@ -128,13 +156,18 @@ class SremBridge {
    * Search for deed data
    * @param {string} deedNumbers - Comma-separated deed numbers
    * @param {string} searchMode - 'owner' or 'date'
-   * @param {number} ownerIdType - 1 for Saudi ID, 2 for Iqama
-   * @param {string} ownerId - Owner ID number
+   * @param {Object} searchParams - Search parameters object
+   * @param {number} searchParams.ownerIdType - 1 for Saudi ID, 2 for Iqama (for owner search)
+   * @param {string} searchParams.ownerId - Owner ID number (for owner search)
+   * @param {number} searchParams.deedDateYear - Year (for date search)
+   * @param {number} searchParams.deedDateMonth - Month 1-12 (for date search)
+   * @param {number} searchParams.deedDateDay - Day 1-31 (for date search)
+   * @param {boolean} searchParams.isHijriDate - Whether date is Hijri (for date search)
    * @returns {Promise<{success: boolean, result: Array, error?: string}>}
    */
-  async searchDeeds(deedNumbers, searchMode = 'owner', ownerIdType = 1, ownerId = '') {
+  async searchDeeds(deedNumbers, searchMode = 'owner', searchParams = {}) {
     return new Promise((resolve) => {
-      const requestId = 'search_' + Date.now();
+      const requestId = this._generateRequestId('search');
       const timeout = setTimeout(() => {
         resolve({ success: false, result: [], error: 'Request timeout' });
       }, 30000);
@@ -155,15 +188,61 @@ class SremBridge {
 
       window.addEventListener('message', listener);
 
-      window.postMessage({
+      // Build request with only required parameters for the search mode
+      const request = {
         type: 'SREM_BRIDGE_REQUEST',
         requestId: requestId,
         deedNumbers: deedNumbers,
         searchMode: searchMode,
-        ownerIdType: ownerIdType,
-        ownerId: ownerId,
         timestamp: Date.now()
-      }, '*');
+      };
+
+      // Add ONLY the required parameters for each search mode
+      if (searchMode === 'owner') {
+        request.ownerIdType = searchParams.ownerIdType || 1;
+        request.ownerId = searchParams.ownerId || '';
+        // Do NOT send date parameters for owner search
+      } else if (searchMode === 'date') {
+        const dateComponents = this._formatDateComponents(
+          searchParams.deedDateYear,
+          searchParams.deedDateMonth,
+          searchParams.deedDateDay
+        );
+        Object.assign(request, dateComponents);
+        request.isHijriDate = searchParams.isHijriDate || false;
+        // Do NOT send owner parameters for date search
+      }
+
+      window.postMessage(request, '*');
+    });
+  }
+
+  /**
+   * Search deeds by owner (convenience method)
+   * @param {string} deedNumbers - Comma-separated deed numbers
+   * @param {number} ownerIdType - 1 for Saudi ID, 2 for Iqama
+   * @param {string} ownerId - Owner ID number
+   * @returns {Promise<{success: boolean, result: Array, error?: string}>}
+   */
+  async searchDeedsByOwner(deedNumbers, ownerIdType = 1, ownerId = '') {
+    return this.searchDeeds(deedNumbers, 'owner', { ownerIdType, ownerId });
+  }
+
+  /**
+   * Search deeds by date (convenience method)
+   * @param {string} deedNumbers - Comma-separated deed numbers
+   * @param {number} year - Year
+   * @param {number} month - Month (1-12)
+   * @param {number} day - Day (1-31)
+   * @param {boolean} isHijriDate - Whether date is Hijri calendar
+   * @returns {Promise<{success: boolean, result: Array, error?: string}>}
+   */
+  async searchDeedsByDate(deedNumbers, year, month, day, isHijriDate = false) {
+    return this.searchDeeds(deedNumbers, 'date', {
+      deedDateYear: year,
+      deedDateMonth: month,
+      deedDateDay: day,
+      isHijriDate: isHijriDate
     });
   }
 

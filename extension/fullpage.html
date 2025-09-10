@@ -95,10 +95,18 @@
       transition: all 0.3s ease;
     }
 
-    .btn-search:hover {
+    .btn-search:hover:not(:disabled) {
       background: linear-gradient(135deg, #0056b3, #004085);
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-search:disabled {
+      background: linear-gradient(135deg, #6c757d, #5a6268);
+      cursor: not-allowed;
+      opacity: 0.7;
+      transform: none;
+      box-shadow: none;
     }
 
     .status-indicator {
@@ -249,7 +257,22 @@
           </div>
           <div class="col-md-6 mb-3">
             <label for="deedDate" class="form-label">تاريخ الصك</label>
-            <input type="date" class="form-control" id="deedDate">
+            <!-- Gregorian Date Input -->
+            <input type="date" class="form-control" id="deedDate" style="display: block;">
+            <!-- Hijri Date Inputs (Manual Entry) -->
+            <div id="hijriDateInputs" style="display: none;">
+              <div class="row">
+                <div class="col-4">
+                  <input type="number" class="form-control" id="hijriDay" placeholder="اليوم" min="1" max="30">
+                </div>
+                <div class="col-4">
+                  <input type="number" class="form-control" id="hijriMonth" placeholder="الشهر" min="1" max="12">
+                </div>
+                <div class="col-4">
+                  <input type="number" class="form-control" id="hijriYear" placeholder="السنة" min="1400" max="1500">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -301,6 +324,9 @@
     </div>
   </div>
 
+  <!-- Load utilities before main script -->
+  <script src="shared-utils.js"></script>
+  <script src="chrome-runtime-helper.js"></script>
   <script src="fullpage.js"></script>
 </body>
 </html>
